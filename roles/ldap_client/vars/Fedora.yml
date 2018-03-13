@@ -1,0 +1,17 @@
+ldap_client_files:
+    - src: 'sssd.conf.j2'
+      dest: '/etc/sssd/sssd.conf'
+      owner: 'root'
+      group: 'root'
+      mode: 0600
+    - src: 'ldap.conf.j2'
+      dest: '/etc/openldap/ldap.conf'
+      owner: 'root'
+      group: 'root'
+      mode: 0644
+    - src: 'system-auth-ac.j2'
+      dest: '/etc/pam.d/system-auth-ac'
+      owner: 'root'
+      group: 'root'
+      mode: 0644
+

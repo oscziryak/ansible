@@ -1,0 +1,29 @@
+---
+# tasks file for ldap_client
+
+- name: (main) Vars files are included
+  include_vars: "{{ item }}"
+  with_items:
+  - "{{ ansible_distribution }}.yml"
+  - "{{ osc_env }}.yml"
+
+- name: (main) Required packages are installed and updated
+  yum:
+    name: "{{ item }}"
+  with_items:
+    - sssd
+    - oddjob-mkhomedir
+    - openldap-clients
+
+- name: (main) Templates are deployed
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  with_items: "{{ ldap_client_files }}"
+  notify:
+    - (handler) Restart sssd
+    - (handler) Restart oddjobd
+
