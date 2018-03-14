@@ -1,2 +1,42 @@
 ---
 # tasks file for ldap_server
+
+- name: Host is entered into LDAP hosts
+  ldap_entry:
+    dn: "cn={{ ansible_hostname }},ou=hosts,dc=opensource,dc=osu,dc=edu"
+    state: present
+    objectclass:
+      - 'top'
+      - 'device'
+      - 'ipHost'
+      - 'ansibleHost'
+    attributes:
+      iphostnumber: "{{ ansible_ip_address }}"
+      cn: "{{ ansible_hostname }}"
+
+- name: Base of LDAP Ansible group are present
+  ldap_entry:
+    dn: "ou={{ osc_env_application }},ou=ansible,dc=opensource,dc=osu,dc=edu"
+    state: present
+    objectclass:
+      - 'top'
+      - 'organizationalunit'
+   attributes:
+    ou: "{{ osc_env_application }}"
+
+- name: Host's LDAP Ansible group's hosts group of names are present
+  ldap_entry:
+    dn: "cn=hosts,ou={{ osc_env_application }},ou=ansible,dc=opensource,dc=osu,dc=edu"
+    state: present
+    objectclass:
+      - 'top'
+      - 'groupofnames'
+    attributes:
+      cn: 'hosts'
+
+- name: Host is added to LDAP Ansible group's hosts group of names
+  ldap_attr:
+    dn: "cn=hosts,ou={{ osc_env_application }},ou=ansible,dc=opensource,dc=osu,dc=edu"
+    name: member
+    values: "cn={{ ansible_hostname }},ou=hosts,dc=opensource,dc=osu,dc=edu"
+    state: present

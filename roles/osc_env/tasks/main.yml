@@ -1,2 +1,6 @@
 ---
 # tasks file for osc_env
+
+osc_env_network:
+
+osc_env_application:
