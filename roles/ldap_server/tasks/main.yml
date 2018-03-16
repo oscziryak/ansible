@@ -16,17 +16,17 @@
 
 - name: Base of LDAP Ansible group are present
   ldap_entry:
-    dn: "ou={{ osc_env_application }},ou=ansible,dc=opensource,dc=osu,dc=edu"
+    dn: "ou={{ ansible_local.osc_facts_app }},ou=ansible,dc=opensource,dc=osu,dc=edu"
     state: present
     objectclass:
       - 'top'
       - 'organizationalunit'
    attributes:
-    ou: "{{ osc_env_application }}"
+    ou: "{{ ansible_local.osc_facts_application }}"
 
 - name: Host's LDAP Ansible group's hosts group of names are present
   ldap_entry:
-    dn: "cn=hosts,ou={{ osc_env_application }},ou=ansible,dc=opensource,dc=osu,dc=edu"
+    dn: "cn=hosts,ou={{ ansible_local.osc_facts_app }},ou=ansible,dc=opensource,dc=osu,dc=edu"
     state: present
     objectclass:
       - 'top'
@@ -36,7 +36,7 @@
 
 - name: Host is added to LDAP Ansible group's hosts group of names
   ldap_attr:
-    dn: "cn=hosts,ou={{ osc_env_application }},ou=ansible,dc=opensource,dc=osu,dc=edu"
+    dn: "cn=hosts,ou={{ ansible_local.osc_facts_app }},ou=ansible,dc=opensource,dc=osu,dc=edu"
     name: member
     values: "cn={{ ansible_hostname }},ou=hosts,dc=opensource,dc=osu,dc=edu"
     state: present

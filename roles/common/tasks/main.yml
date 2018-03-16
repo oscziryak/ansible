@@ -1,2 +1,22 @@
 ---
 # tasks file for common
+
+- name: (main) Custom facts directory is created
+  file:
+    dest: "/etc/ansible/facts.d"
+    owner: "root"
+    group: "root"
+    mode: 0644
+
+- name: (main) Custom facts file is deployed
+  template:
+    src: "../files/osc_facts.fact"
+    dest: "/etc/ansible/facts.d/osc_facts.fact"
+    owner: "root"
+    group: "root"
+    mode: 0755
+  register: common_osc_facts
+
+- name: (main) Facts are re-gathered
+  setup:
+  when: common_osc_facts.changed

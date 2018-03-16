@@ -6,3 +6,9 @@
     name: sssd
     state: restarted
     enabled: yes
+
+- name: (handler) Restart oddjobd
+  service:
+    name: oddjobd
+    state: restart
+    enabled: yes

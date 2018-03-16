@@ -1,0 +1,52 @@
+#!/usr/bin/python
+
+# This module will parse out the FQDN of the host and set some environment variables for Ansible runs
+
+try:
+    import json
+except ImportError:
+    import simplejson as json
+
+import socket
+
+fqdn = socket.getfqdn()
+osc_facts_env = fqdn.split('.')[1]
+osc_facts_loc = fqdn.split('.')[0][-1]
+osc_facts_host = fqdn.split('.')[0][-2]
+osc_facts_parity = fqdn.split('.')[0][-6:-4]
+osc_facts_func = fqdn.split('.')[0][-8:-6]
+osc_facts_app = fqdn.split('.')[0][:-8]
+
+location_dict = {'o': 'office'}
+host_dict = {'t': 'turing', 'w': 'switch', 's': 'stallman', 'f': 'focault'}
+app_dict = {
+    'ldapprv': 'ldap',
+    'ldapcon': 'ldap',
+    'dnsmast': 'dns',
+    'dnsslav': 'dns',
+    'website': 'website',
+    'jmphost': 'jumphost',
+    'pfsbld': 'pfsense',
+    'pfsadm': 'pfsense',
+    'pfsdmz': 'pfsense',
+    'pfscore': 'pfsense',
+}
+
+osc_facts_loc = location_dict[osc_facts_loc]
+osc_facts_host = host_dict[osc_facts_host]
+osc_facts_app = app_dict[osc_facts_app]
+
+if int(osc_facts_parity) % 2 == 0:
+    osc_facts_parity = 'even'
+else:
+    osc_facts_parity = 'odd'
+
+# Hand off the below values to Ansible via JSON
+print json.dumps({
+    "osc_facts_env": osc_facts_env,
+    "osc_facts_loc": osc_facts_loc,
+    "osc_facts_host": osc_facts_host,
+    "osc_facts_parity": osc_facts_parity,
+    "osc_facts_func": osc_facts_func,
+    "osc_facts_app": osc_facts_app,
+})

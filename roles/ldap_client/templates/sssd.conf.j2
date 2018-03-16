@@ -15,8 +15,8 @@ id_provider = ldap
 auth_provider = ldap
 ldap_uri = ldap://{{ ldap_client_server }}
 ldap_user_search_base = ou=people,dc=opensource,dc=osu,dc=edu
-ldap_group_search_base = ou=groups,dc=opensource,dc=osu,dc=edu
+ldap_group_search_base = ou=groups,dc=opensource,dc=osu,dc=edu?onelevel??cn=admins,ou={{ ansible_local.osc_facts_app }},ou=ansible,dc=opensource,dc=osu,dc=edu?base??
 access_provider = simple
 simple_allow_users = oscadmin
-simple_allow_groups = jumphostAdmins,oscadmins
+simple_allow_groups = admins,oscadmins
 debug_level=6

@@ -15,3 +15,7 @@ ldap_client_files:
       group: 'root'
       mode: 0644
 
+ldap_client_packages:
+    - sssd
+    - oddjob-mkhomedir
+    - openldap-clients

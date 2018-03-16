@@ -5,15 +5,12 @@
   include_vars: "{{ item }}"
   with_items:
   - "{{ ansible_distribution }}.yml"
-  - "{{ osc_env }}.yml"
+  - "{{ ansible_local.osc_facts_env }}.yml"
 
 - name: (main) Required packages are installed and updated
   yum:
     name: "{{ item }}"
-  with_items:
-    - sssd
-    - oddjob-mkhomedir
-    - openldap-clients
+  with_items: "{{ ldap_client_packages }}"
 
 - name: (main) Templates are deployed
   template:
