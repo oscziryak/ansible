@@ -1,18 +1,18 @@
 ---
 # tasks file for ldap_client
 
-- name: (main) Vars files are included
+- name: (ldap_client) Vars files are included
   include_vars: "{{ item }}"
   with_items:
   - "{{ ansible_distribution }}.yml"
-  - "{{ ansible_local.osc_facts_env }}.yml"
+  - "{{ ansible_local.osc_facts.env }}.yml"
 
-- name: (main) Required packages are installed and updated
-  yum:
+- name: (ldap_client) Required packages are installed and updated
+  dnf:
     name: "{{ item }}"
   with_items: "{{ ldap_client_packages }}"
 
-- name: (main) Templates are deployed
+- name: (ldap_client) Templates are deployed
   template:
     src: "{{ item.src }}"
     dest: "{{ item.dest }}"

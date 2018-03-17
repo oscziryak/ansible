@@ -10,5 +10,5 @@
 - name: (handler) Restart oddjobd
   service:
     name: oddjobd
-    state: restart
+    state: restarted
     enabled: yes
