@@ -1,0 +1,10 @@
+---
+- hosts: all
+  become: yes
+  vars_prompt:
+    - name: "ldap_host_ansible_user_id_passwd"
+      prompt: "Please enter your LDAP password"
+      private: yes
+  roles:
+    - common
+    - ldap_host

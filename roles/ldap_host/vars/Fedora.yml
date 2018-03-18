@@ -1,4 +1,4 @@
-ldap_client_files:
+ldap_host_files:
     - src: 'sssd.conf.j2'
       dest: '/etc/sssd/sssd.conf'
       owner: 'root'
@@ -15,7 +15,7 @@ ldap_client_files:
       group: 'root'
       mode: 644
 
-ldap_client_packages:
+ldap_host_packages:
     - sssd
     - oddjob-mkhomedir
     - openldap-clients

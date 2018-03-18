@@ -1,13 +1,13 @@
 ---
-# handlers file for ldap_client
+# handlers file for ldap_host
 
-- name: (handler) Restart sssd
+- name: (ldap_host) Restart sssd
   service:
     name: sssd
     state: restarted
     enabled: yes
 
-- name: (handler) Restart oddjobd
+- name: (ldap_host) Restart oddjobd
   service:
     name: oddjobd
     state: restarted

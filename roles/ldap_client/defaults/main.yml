@@ -1,4 +1,0 @@
----
-# defaults file for ldap_client
-
-ldap_client_sssdbind_authtok: "{{ vault_ldap_client_sssdbind_authtok }}"
