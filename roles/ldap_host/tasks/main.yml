@@ -21,37 +21,43 @@
     # have to create uid=managepeople,ou=svcaccts,dc=opensource,[...] and then anyone who know the
     # group_vars/all/vault.yml password could manage any of the hosts and users. This way, we still keep control in the
     # hands of the club admins when it comes to people and hosts.
-    binddn: "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu"
-    bindpw: "{{ ldap_host_ansible_user_id_passwd }}"
+    bind_dn: "uid={{ ldap_host_admin_user }},ou=people,dc=opensource,dc=osu,dc=edu"
+    bind_pw: "{{ ldap_host_admin_user_passwd }}"
+    server_uri: "ldap://{{ ldap_host_server }}"
+    start_tls: True
     state: present
-    objectclass:
+    objectClass:
       - 'top'
       - 'device'
       - 'ipHost'
       - 'ansibleHost'
     attributes:
-      iphostnumber: "{{ ansible_ip_address }}"
+      iphostnumber: "{{ ansible_default_ipv4.address }}"
       cn: "{{ ansible_hostname }}"
 
 - name: (ldap_host) ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu is present
   ldap_entry:
     dn: "ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu"
-    binddn: "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu"
-    bindpw: "{{ ldap_host_ansible_user_id_passwd }}"
+    bind_dn: "uid={{ ldap_host_admin_user }},ou=people,dc=opensource,dc=osu,dc=edu"
+    bind_pw: "{{ ldap_host_admin_user_passwd }}"
+    server_uri: "ldap://{{ ldap_host_server }}"
+    start_tls: True
     state: present
-    objectclass:
+    objectClass:
       - 'top'
       - 'organizationalunit'
-   attributes:
-    ou: "{{ ansible_local.osc_facts.app }}"
+    attributes:
+     ou: "{{ ansible_local.osc_facts.app }}"
 
 - name: (ldap_host) cn=hosts,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu is present
   ldap_entry:
     dn: "cn=hosts,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu"
-    binddn: "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu"
-    bindpw: "{{ ldap_host_ansible_user_id_passwd }}"
+    bind_dn: "uid={{ ldap_host_admin_user }},ou=people,dc=opensource,dc=osu,dc=edu"
+    bind_pw: "{{ ldap_host_admin_user_passwd }}"
+    server_uri: "ldap://{{ ldap_host_server }}"
+    start_tls: True
     state: present
-    objectclass:
+    objectClass:
       - 'top'
       - 'groupofnames'
     attributes:
@@ -60,8 +66,8 @@
 - name: (ldap_host) cn=hosts,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu includes {{ ansible_hostname }}
   ldap_attr:
     dn: "cn=hosts,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu"
-    binddn: "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu"
-    bindpw: "{{ ldap_host_ansible_user_id_passwd }}"
+    bind_dn: "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu"
+    bind_pw: "{{ ldap_host_ansible_user_id_passwd }}"
     name: member
     values: "cn={{ ansible_hostname }},ou=hosts,dc=opensource,dc=osu,dc=edu"
     state: present
