@@ -1,0 +1,19 @@
+ldap_host_files:
+    - src: 'sssd.conf.j2'
+      dest: '/etc/sssd/sssd.conf'
+      owner: 'root'
+      group: 'root'
+      mode: 600
+    - src: 'ldap.conf.j2'
+      dest: '/etc/ldap.conf'
+      owner: 'root'
+      group: 'root'
+      mode: 644
+
+ldap_host_packages:
+    - sssd
+    - oddjob-mkhomedir
+    - ldap-utils
+    - libpam-sss
+    - libnss-sss
+    - libnss-ldap
