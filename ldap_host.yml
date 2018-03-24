@@ -1,8 +1,14 @@
 ---
+# For running this the first time on a new server, we can't auth with our LDAP credentials, b/c that's what this
+# is setting up. So we auth with the root PW and go from there.
+#
+# ansible-playbook -ki websiteui01fdto, --ask-vault-pass ldap_host.yml -u root
+#
+
 - hosts: all
   become: yes
   vars:
-    - ldap_host_admin_user: "{{ lookup('env','USER') }}"
+    - ldap_host_user: "{{ lookup('env','USER') }}"
   vars_prompt:
     - name: "ldap_host_user_passwd"
       prompt: "Please enter your LDAP password"

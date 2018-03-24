@@ -9,14 +9,8 @@ ldap_host_files:
       owner: 'root'
       group: 'root'
       mode: 644
-    - src: 'system-auth-ac.j2'
-      dest: '/etc/pam.d/system-auth-ac'
-      owner: 'root'
-      group: 'root'
-      mode: 644
 
 ldap_host_packages:
     - sssd
-    - python-ldap
     - oddjob-mkhomedir
     - openldap-clients
