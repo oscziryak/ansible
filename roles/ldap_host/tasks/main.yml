@@ -17,6 +17,7 @@
 # that server calling the ldap_entry task. We have to delegate all of this to the CNC server. Luckily, this also means
 # that only the CNC server has to have the necessary python packages for the `ldap_*` modules.
 - block:
+
   - name: (ldap_host) Host is entered into LDAP hosts
     ldap_entry:
       server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
@@ -87,6 +88,27 @@
     group: "{{ item.group }}"
     mode: "{{ item.mode }}"
   with_items: "{{ ldap_host_files }}"
+  notify:
+    - (ldap_host) Restart sssd
+    - (ldap_host) Restart oddjobd
+
+- name: (ldap_host) LDAP certs directory is present
+  file:
+    path: "{{ ldap_host_ldap_directory.path }}/certs"
+    state: directory
+    owner: "{{ ldap_host_ldap_directory.owner }}"
+    group: "{{ ldap_host_ldap_directory.group }}"
+  notify:
+    - (ldap_host) Restart sssd
+    - (ldap_host) Restart oddjobd
+
+- name: (ldap_host) cacert.pem is deployed
+  copy:
+    src: "cacert.pem"
+    dest: "{{ ldap_host_ldap_directory.path }}/certs/cacert.pem"
+    owner: "{{ ldap_host_ldap_directory.owner }}"
+    group: "{{ ldap_host_ldap_directory.group }}"
+    mode: 0644
   notify:
     - (ldap_host) Restart sssd
     - (ldap_host) Restart oddjobd

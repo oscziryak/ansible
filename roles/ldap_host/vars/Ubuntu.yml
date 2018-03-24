@@ -5,7 +5,7 @@ ldap_host_files:
       group: 'root'
       mode: 600
     - src: 'ldap.conf.j2'
-      dest: '/etc/ldap.conf'
+      dest: '/etc/ldap/ldap.conf'
       owner: 'root'
       group: 'root'
       mode: 644
@@ -17,3 +17,8 @@ ldap_host_packages:
     - libpam-sss
     - libnss-sss
     - libnss-ldap
+
+ldap_host_ldap_directory:
+  path: '/etc/ldap'
+  owner: 'root'
+  group: 'root'

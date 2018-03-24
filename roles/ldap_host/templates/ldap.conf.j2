@@ -1,6 +1,6 @@
 BASE    dc=opensource,dc=osu,dc=edu
 URI     ldap://{{ ldap_host_server }}
-TLS_CACERT /etc/openldap/certs/cacert.pem
+TLS_CACERT {{ ldap_host_ldap_directory.path }}/certs/cacert.pem
 {# Turning this off breaks GSSAPI used with krb5 when rdns = false
 ...
 What the hell does that mean for us? #}

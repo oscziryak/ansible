@@ -14,3 +14,8 @@ ldap_host_packages:
     - sssd
     - oddjob-mkhomedir
     - openldap-clients
+
+ldap_host_ldap_directory:
+  path: '/etc/openldap'
+  owner: 'ldap'
+  group: 'ldap'
