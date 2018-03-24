@@ -4,7 +4,7 @@
   vars:
     - ldap_host_admin_user: "{{ lookup('env','USER') }}"
   vars_prompt:
-    - name: "ldap_host_admin_user_passwd"
+    - name: "ldap_host_user_passwd"
       prompt: "Please enter your LDAP password"
       private: yes
   roles:

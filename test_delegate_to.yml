@@ -1,0 +1,6 @@
+- hosts: all
+  tasks:
+
+    - debug:
+        var: ansible_hostname
+      delegate_to: localhost

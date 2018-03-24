@@ -27,7 +27,7 @@
       # group_vars/all/vault.yml password could manage any of the hosts and users. This way, we still keep control in
       # the hands of the club admins when it comes to people and hosts.
       binddn: "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu"
-      bindpw: "{{ ldap_host_ansible_user_id_passwd }}"
+      bindpw: "{{ ldap_host_user_passwd }}"
       state: present
       objectclass:
         - 'top'
@@ -43,20 +43,20 @@
       server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
       dn: "ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu"
       binddn: "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu"
-      bindpw: "{{ ldap_host_ansible_user_id_passwd }}"
+      bindpw: "{{ ldap_host_user_passwd }}"
       state: present
       objectclass:
         - 'top'
         - 'organizationalunit'
-     attributes:
-      ou: "{{ ansible_local.osc_facts.app }}"
+      attributes:
+        ou: "{{ ansible_local.osc_facts.app }}"
 
   - name: (ldap_host) cn=hosts,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu is present
     ldap_entry:
       server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
       dn: "cn=hosts,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu"
       binddn: "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu"
-      bindpw: "{{ ldap_host_ansible_user_id_passwd }}"
+      bindpw: "{{ ldap_host_user_passwd }}"
       state: present
       objectclass:
         - 'top'
@@ -69,7 +69,7 @@
       server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
       dn: "cn=hosts,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu"
       binddn: "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu"
-      bindpw: "{{ ldap_host_ansible_user_id_passwd }}"
+      bindpw: "{{ ldap_host_user_passwd }}"
       name: member
       values: "cn={{ ansible_hostname }},ou=hosts,dc=opensource,dc=osu,dc=edu"
       state: present
