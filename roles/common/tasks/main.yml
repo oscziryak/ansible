@@ -31,7 +31,7 @@
   - "{{ ansible_local.osc_facts.env }}.yml"
 
 - name: (common) Packages are installed
-  dnf:
+  package:
     name: "{{ item }}"
     state: latest
   with_items: "{{ common_pkgs }}"

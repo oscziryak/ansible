@@ -8,7 +8,7 @@
   - "{{ ansible_local.osc_facts.env }}.yml"
 
 - name: (ldap_host) Required packages are installed and updated
-  dnf:
+  package:
     name: "{{ item }}"
     state: latest
   with_items: "{{ ldap_host_packages }}"
@@ -91,5 +91,6 @@
     - (ldap_host) Restart sssd
     - (ldap_host) Restart oddjobd
 
-- name: (ldap_host) SSSD is enabled for system authentication
+- name: (ldap_host) SSSD is enabled for system authentication on Fedora
   command: authconfig --update --enablesssd --enablesssdauth
+  when: ansible_distribution in ['Fedora']
