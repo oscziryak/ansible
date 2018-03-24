@@ -13,58 +13,68 @@
     state: latest
   with_items: "{{ ldap_host_packages }}"
 
-- name: (ldap_host) Host is entered into LDAP hosts
-  ldap_entry:
-    dn: "cn={{ ansible_hostname }},ou=hosts,dc=opensource,dc=osu,dc=edu"
-    # Here we're just using the account of the user invoking this. Any user who runs this should be an admin, or else
-    # this isn't going to work. I was _going_ to create uid=managehosts,ou=svcaccts,dc=opensource,[...] but then I'd
-    # have to create uid=managepeople,ou=svcaccts,dc=opensource,[...] and then anyone who know the
-    # group_vars/all/vault.yml password could manage any of the hosts and users. This way, we still keep control in the
-    # hands of the club admins when it comes to people and hosts.
-    binddn: "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu"
-    bindpw: "{{ ldap_host_ansible_user_id_passwd }}"
-    state: present
-    objectclass:
-      - 'top'
-      - 'device'
-      - 'ipHost'
-      - 'ansibleHost'
-    attributes:
-      iphostnumber: "{{ ansible_ip_address }}"
-      cn: "{{ ansible_hostname }}"
+# If the server is in one of the environments that can't reach ldapprvin01bato (e.g. BLD or DMZ), then we can't have
+# that server calling the ldap_entry task. We have to delegate all of this to the CNC server. Luckily, this also means
+# that only the CNC server has to have the necessary python packages for the `ldap_*` modules.
+- block:
+  - name: (ldap_host) Host is entered into LDAP hosts
+    ldap_entry:
+      server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
+      dn: "cn={{ ansible_hostname }},ou=hosts,dc=opensource,dc=osu,dc=edu"
+      # Here we're just using the account of the user invoking this. Any user who runs this should be an admin, or else
+      # this isn't going to work. I was _going_ to create uid=managehosts,ou=svcaccts,dc=opensource,[...] but then I'd
+      # have to create uid=managepeople,ou=svcaccts,dc=opensource,[...] and then anyone who know the
+      # group_vars/all/vault.yml password could manage any of the hosts and users. This way, we still keep control in
+      # the hands of the club admins when it comes to people and hosts.
+      binddn: "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu"
+      bindpw: "{{ ldap_host_ansible_user_id_passwd }}"
+      state: present
+      objectclass:
+        - 'top'
+        - 'device'
+        - 'ipHost'
+        - 'ansibleHost'
+      attributes:
+        iphostnumber: "{{ ansible_ip_address }}"
+        cn: "{{ ansible_hostname }}"
 
-- name: (ldap_host) ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu is present
-  ldap_entry:
-    dn: "ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu"
-    binddn: "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu"
-    bindpw: "{{ ldap_host_ansible_user_id_passwd }}"
-    state: present
-    objectclass:
-      - 'top'
-      - 'organizationalunit'
-   attributes:
-    ou: "{{ ansible_local.osc_facts.app }}"
+  - name: (ldap_host) ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu is present
+    ldap_entry:
+      server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
+      dn: "ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu"
+      binddn: "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu"
+      bindpw: "{{ ldap_host_ansible_user_id_passwd }}"
+      state: present
+      objectclass:
+        - 'top'
+        - 'organizationalunit'
+     attributes:
+      ou: "{{ ansible_local.osc_facts.app }}"
 
-- name: (ldap_host) cn=hosts,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu is present
-  ldap_entry:
-    dn: "cn=hosts,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu"
-    binddn: "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu"
-    bindpw: "{{ ldap_host_ansible_user_id_passwd }}"
-    state: present
-    objectclass:
-      - 'top'
-      - 'groupofnames'
-    attributes:
-      cn: 'hosts'
+  - name: (ldap_host) cn=hosts,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu is present
+    ldap_entry:
+      server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
+      dn: "cn=hosts,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu"
+      binddn: "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu"
+      bindpw: "{{ ldap_host_ansible_user_id_passwd }}"
+      state: present
+      objectclass:
+        - 'top'
+        - 'groupofnames'
+      attributes:
+        cn: 'hosts'
 
-- name: (ldap_host) cn=hosts,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu includes {{ ansible_hostname }}
-  ldap_attr:
-    dn: "cn=hosts,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu"
-    binddn: "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu"
-    bindpw: "{{ ldap_host_ansible_user_id_passwd }}"
-    name: member
-    values: "cn={{ ansible_hostname }},ou=hosts,dc=opensource,dc=osu,dc=edu"
-    state: present
+  - name: (ldap_host) cn=hosts,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu includes {{ ansible_hostname }}
+    ldap_attr:
+      server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
+      dn: "cn=hosts,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu"
+      binddn: "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu"
+      bindpw: "{{ ldap_host_ansible_user_id_passwd }}"
+      name: member
+      values: "cn={{ ansible_hostname }},ou=hosts,dc=opensource,dc=osu,dc=edu"
+      state: present
+
+  delegate_to: localhost
 
 - name: (ldap_host) Templates are deployed
   template:
