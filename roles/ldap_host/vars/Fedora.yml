@@ -17,5 +17,6 @@ ldap_host_files:
 
 ldap_host_packages:
     - sssd
+    - python-ldap
     - oddjob-mkhomedir
     - openldap-clients
