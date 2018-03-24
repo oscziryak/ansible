@@ -1,0 +1,24 @@
+- hosts: all
+  vars_prompt:
+    - name: "{{ ldap_user_acct_type_selection }}"
+      prompt: "Please enter the user's type:\n  1. svcaccts\n   2. people)"
+      private: yes
+    - name: "{{ ldap_user_acct_entry }}"
+      prompt: "Please enter the username for the account"
+      private: no
+    - name: "{{ ldap_user_acct_userPassword }}"
+      prompt: "Please enter the user's account password"
+      private: yes
+    - name: "{{ ldap_user_acct_gecos }}"
+      prompt: "Please enter the user's name (gecos)"
+      private: no
+  tasks:
+    - set_fact:
+      ldap_user_acct_type: 'svcaccts'
+      when: ldap_user_acct_type_selection == '1'
+
+    - set_fact:
+      ldap_user_acct_type: 'people'
+      when: ldap_user_acct_type_selection == '2'
+
+    - include_role: ldap_user

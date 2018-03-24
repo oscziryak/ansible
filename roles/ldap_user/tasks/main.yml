@@ -1,3 +1,148 @@
 ---
 # tasks file for ldap_user
 
+# We're using the hosts file here as the hosts that the user should be an admin for. Since the canonical reference
+# to the applications are
+
+- name: (ldap_user) Find highest UID for {{ ldap_user_acct_type }}
+  command: ldapsearch -vxZZWD "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu" -b ou={{ ldap_user_acct_type }},dc=opensource,dc=osu,dc=edu | awk '/uidNumber: / {print $2}' | sort | tail -n 1
+  register: ldap_user_highest_id_number
+
+- name: (ldap_user) LDAP user entry is created
+  ldap_entry:
+    dn: uid={{ ldap_user_acct_entry }},ou={{ ldap_user_acct_type }},dc=opensource,dc=osu,dc=edu
+    state: present
+    server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
+    bind_dn: "{{ ansible_user_id }}"
+    bind_pw: "{{ ansible_ssh_pass }}"
+    objectClass:
+      - top
+      - person
+      - posixAccount
+      - shadowAccount
+    attribute:
+      cn: "{{ ldap_user_acct_entry }}"
+      uid: "{{ ldap_user_acct_entry }}"
+      # These are only changed if the entry has to be created in the first place. It does not get overwritten by this
+      # module
+      uidNumber: "{{ (ldap_user_highest_id_number | int) + 1 }}"
+      gidNumber: "{{ (ldap_user_highest_id_number | int) + 1 }}"
+      homeDirectory: "/home/{{ ldap_user_acct_entry }}"
+  run_once: True
+  delegate_to: localhost
+
+- name: (ldap_user) LDAP user entry is populated
+  ldap_attr:
+    dn: uid={{ ldap_user_acct_entry }},ou={{ ldap_user_acct_type }},dc=opensource,dc=osu,dc=edu
+    state: exact
+    server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
+    bind_dn: "{{ ansible_user_id }}"
+    bind_pw: "{{ ansible_ssh_pass }}"
+    name: "{{ item.key }}"
+    values: "{{ item.value }}"
+    with_dict:
+      cn: "{{ ldap_user_acct_entry }}"
+      uid: "{{ ldap_user_acct_entry }}"
+      homeDirectory: "/home/{{ ldap_user_acct_entry }}"
+      gecos: "{{ ldap_user_acct_gecos }}"
+      loginShell: '/bin/bash'
+      userPassword: "{{ ldap_user_acct_userPassword }}"
+  run_once: True
+  delegate_to: localhost
+
+- name: (ldap_user) LDAP group entry is created
+  ldap_entry:
+    dn: uid={{ ldap_user_acct_entry }},ou=groups,dc=opensource,dc=osu,dc=edu
+    state: present
+    server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
+    bind_dn: "{{ ansible_user_id }}"
+    bind_pw: "{{ ansible_ssh_pass }}"
+    objectClass:
+      - top
+      - grouOfNames
+      - posixGroup
+    attribute:
+      # This is only changed if the entry has to be created in the first place. It does not get overwritten by this
+      # module
+      gidNumber: "{{ (ldap_user_highest_id_number | int) + 1 }}"
+  run_once: True
+  delegate_to: localhost
+
+- name: (ldap_user) LDAP group entry is populated
+  ldap_attr:
+    dn: uid={{ ldap_user_acct_entry }},ou=groups,dc=opensource,dc=osu,dc=edu
+    state: exact
+    server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
+    bind_dn: "{{ ansible_user_id }}"
+    bind_pw: "{{ ansible_ssh_pass }}"
+    name: 'memberUid'
+    values: "{{ ldap_user_acct_entry }}"
+  run_once: True
+  delegate_to: localhost
+
+- name: (ldap_user) ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu is present
+  ldap_entry:
+    server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
+    dn: "ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu"
+    bind_dn: "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu"
+    bind_pw: "{{ ansible_ssh_pass }}"
+    state: present
+    objectClass:
+      - 'top'
+      - 'organizationalunit'
+    attributes:
+      ou: "{{ ansible_local.osc_facts.app }}"
+
+- block:
+
+  - name: (ldap_user) cn=svcaccts,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu is present and includes {{ ldap_user_acct_entry }}
+    ldap_entry:
+      server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
+      dn: "cn=svcaccts,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu"
+      bind_dn: "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu"
+      bind_pw: "{{ ansible_ssh_pass }}"
+      state: present
+      objectClass:
+        - 'top'
+        - 'groupofnames'
+      attributes:
+        cn: 'svcaccts'
+        member: "cn={{ ldap_user_acct_entry }},ou=svcaccts,dc=opensource,dc=osu,dc=edu"
+    delegate_to: localhost
+
+  - name: (ldap_user) {{ ldap_user_acct_entry }} is added as a svcacct to the inventory hosts
+    ldap_addr:
+      dn: "cn=svcaccts,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu"
+      state: present
+      name: member
+      values: "{{ ldap_user_acct_entry }},ou=svcaccts,dc=opensource,dc=osu,dc=edu"
+    delegate_to: localhost
+
+  when: ldap_user_acct_type == 'svcaccts'
+
+- block:
+
+  - name: (ldap_user) cn=admins,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu is present and includes {{ ldap_user_acct_entry }}
+    ldap_entry:
+      server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
+      dn: "cn=admins,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu"
+      bind_dn: "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu"
+      bind_pw: "{{ ansible_ssh_pass }}"
+      state: present
+      objectClass:
+        - 'top'
+        - 'groupofnames'
+      attributes:
+        cn: 'admins'
+        member: "cn={{ ldap_user_acct_entry }},ou=people,dc=opensource,dc=osu,dc=edu"
+    delegate_to: localhost
+
+  - name: (ldap_user) {{ ldap_user_acct_entry }} is added as an admin to the inventory hosts
+    ldap_addr:
+      dn: "cn=admins,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu"
+      state: present
+      name: member
+      values: "{{ ldap_user_acct_entry }},ou=people,dc=opensource,dc=osu,dc=edu"
+    delegate_to: localhost
+
+  when: ldap_user_acct_type == 'people'
