@@ -119,6 +119,6 @@
 
 - name: (ldap_host) SUDOers is configured for SSSD
   lineinfile:
-    file: '/etc/nsswitch.conf'
+    path: '/etc/nsswitch.conf'
     regexp: '^sudoers:'
     line: 'sudoers: files sss'
