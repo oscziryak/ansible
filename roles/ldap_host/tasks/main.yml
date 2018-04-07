@@ -39,10 +39,10 @@
         iphostnumber: "{{ ansible_default_ipv4.address }}"
         cn: "{{ ansible_hostname }}"
 
-  - name: (ldap_host) ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu is present
+  - name: (ldap_host) ou={{ ansible_local.osc_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu is present
     ldap_entry:
       server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
-      dn: "ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu"
+      dn: "ou={{ ansible_local.osc_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu"
       bind_dn: "uid={{ ldap_host_user }},ou=people,dc=opensource,dc=osu,dc=edu"
       bind_pw: "{{ ldap_host_user_passwd }}"
       state: present
@@ -52,10 +52,10 @@
       attributes:
         ou: "{{ ansible_local.osc_facts.app }}"
 
-  - name: (ldap_host) cn=hosts,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu is present and includes {{ ansible_hostname }}
+  - name: (ldap_host) cn=hosts,ou={{ ansible_local.osc_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu is present and includes {{ ansible_hostname }}
     ldap_entry:
       server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
-      dn: "cn=hosts,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu"
+      dn: "cn=hosts,ou={{ ansible_local.osc_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu"
       bind_dn: "uid={{ ldap_host_user }},ou=people,dc=opensource,dc=osu,dc=edu"
       bind_pw: "{{ ldap_host_user_passwd }}"
       state: present
@@ -66,11 +66,11 @@
         cn: 'hosts'
         member: "cn={{ ansible_hostname }},ou=hosts,dc=opensource,dc=osu,dc=edu"
 
-  - name: (ldap_host) cn=hosts,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu includes {{ ansible_hostname }}
+  - name: (ldap_host) cn=hosts,ou={{ ansible_local.osc_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu includes {{ ansible_hostname }}
     # We have to have this one, b/c if the cn=hosts already exists, the `member` attribute won't be overwritten or added to the groupofnames
     ldap_attr:
       server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
-      dn: "cn=hosts,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu"
+      dn: "cn=hosts,ou={{ ansible_local.osc_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu"
       bind_dn: "uid={{ ldap_host_user }},ou=people,dc=opensource,dc=osu,dc=edu"
       bind_pw: "{{ ldap_host_user_passwd }}"
       name: member
@@ -116,3 +116,9 @@
 - name: (ldap_host) SSSD is enabled for system authentication on Fedora
   command: authconfig --update --enablesssd --enablesssdauth
   when: ansible_distribution in ['Fedora']
+
+- name: (ldap_host) SUDOers is configured for SSSD
+  lineinfile:
+    file: '/etc/nsswitch.conf'
+    regexp: '^sudoers:'
+    line: 'sudoers: files sss'
