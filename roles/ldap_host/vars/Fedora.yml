@@ -17,5 +17,5 @@ ldap_host_packages:
 
 ldap_host_ldap_directory:
   path: '/etc/openldap'
-  owner: 'ldap'
-  group: 'ldap'
+  owner: 'root'
+  group: 'root'
