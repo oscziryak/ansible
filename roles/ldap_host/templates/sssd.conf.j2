@@ -19,7 +19,7 @@ id_provider = ldap
 auth_provider = ldap
 ldap_schema = rfc2307bis
 ldap_uri = ldap://{{ ldap_host_server }}
-ldap_user_search_base = ou=people,dc=opensource,dc=osu,dc=edu
+ldap_user_search_base = ou=people,dc=opensource,dc=osu,dc=edu?subtree??ou=svcaccts,dc=opensource,dc=osu,dc=edu?subtree?
 ldap_sudo_search_base = ou=sudoers,dc=opensource,dc=osu,dc=edu
 ldap_group_search_base = ou=groups,dc=opensource,dc=osu,dc=edu?subtree??ou=groups,ou={{ ansible_local.osc_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu?subtree?
 access_provider = simple
