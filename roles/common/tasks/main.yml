@@ -1,7 +1,26 @@
 ---
 # tasks file for common
 
-# TODO: Add python2 installation for Fedora. Or symlink python3 to /usr/bin/python
+- name: (common) All packages on system are updated
+  dnf:
+    name: '*'
+    state: latest
+  when: ansible_distribution == 'Fedora'
+
+- block:
+  # This is an ugly hack due to the fact that the 'apt' module's 'upgrade' function requires that
+  # aptitude be installed first. Kinda sucky, but whatever.
+  - name: (common) Aptitude is installed on Ubuntu systems
+    apt:
+      name: aptitude
+      state: latest
+
+  - name: (common) All packages on system are updated
+    apt:
+      upgrade: yes
+      update_cache: yes
+
+  when: ansible_distribution == 'Ubuntu'
 
 - name: (common) Custom facts directory is created
   file:
@@ -10,6 +29,7 @@
     group: "root"
     mode: 0644
     state: directory
+  become: yes
 
 - name: (common) Custom facts file is deployed
   template:
@@ -18,6 +38,7 @@
     owner: "root"
     group: "root"
     mode: 0755
+  become: yes
   register: common_osc_facts
 
 - name: (common) Facts are re-gathered
@@ -27,12 +48,12 @@
 - name: (common) Vars files are included
   include_vars: "{{ item }}"
   with_items:
-  - "{{ ansible_distribution }}.yml"
-  - "{{ ansible_local.osc_facts.env }}.yml"
+    - "{{ ansible_distribution }}.yml"
+    - "{{ ansible_local.osc_facts.env }}.yml"
 
 - name: (common) Packages are installed
   package:
     name: "{{ item }}"
     state: latest
+  become: yes
   with_items: "{{ common_pkgs }}"
-

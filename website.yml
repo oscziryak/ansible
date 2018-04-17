@@ -1,0 +1,157 @@
+#
+# Deploy the Opensource Club's website onto the new network including all post-infrastructure
+# setup that the VMs require.
+#
+#     ansible-playbook -ki inventory/website.inv website.yml --vault-password-file ~/.vault_pass --ask-sudo-pass
+#
+- hosts: all
+  become: yes
+  become_user: root
+  roles:
+  
+    - common
+
+- hosts: bl
+  become: yes
+  become_user: website_builder
+  vars:
+    httpd_DocumentRoot: '/srv/website'
+  tasks:
+
+    - name: Necessary packages are installed
+      # For now we are just going to assume that we're using Ubuntu for our build server, as that's
+      # the only OS that supports it right now
+      apt:
+        name: "{{ item }}"
+        state: latest
+      with_items:
+        - ruby-dev
+        - libffi-dev
+        - apache2
+        - git
+        - build-essential
+        - libxml2-dev
+        - zlib1g-dev
+        - vsftpd
+
+    - name: Bundler is installed
+      gem:
+        name: bundler
+        state: latest
+
+    - name: Website directories are present
+      become_user: root
+      file:
+        path: "/{{ item }}/website"
+        state: directory
+        owner: website_builder
+        group: website_builder
+      with_items:
+        - 'opt'
+        - 'srv'
+
+    - name: Website repo is updated
+      git:
+        repo: 'https://github.com/osuosc/website.git'
+        dest: '/opt/website'
+        force: yes
+
+    - name: Website dependencies are installed
+      command: bundle install
+      args:
+        chdir: /opt/website
+
+    - name: Site is built
+      command: bundle exec rake --trace gen_site
+      args:
+        chdir: /opt/website
+
+    - name: Static HTML is deployed to "{{ httpd_DocumentRoot }}"
+      command: rsync -av /opt/website/_site/ /srv/website
+
+    - name: vsftpd is set to allow anonymous logins
+      become_user: root
+      lineinfile:
+        regexp: "^anonymous_enable.*"
+        line: "anonymous_enable=Yes"
+        path: /etc/vsftpd.conf
+      register: website_bl_vsftpd_allow_anon
+
+    - name: User 'ftp' has their home directory set to {{ httpd_DocumentRoot }}
+      become_user: root
+      user:
+        name: 'ftp'
+        home: "{{ httpd_DocumentRoot }}"
+      register: website_bl_ftp_user
+
+    - name: vsftp is restarted
+      become_user: root
+      service:
+        name: 'vsftpd'
+        state: restarted
+      when: website_bl_vsftpd_allow_anon.changed or website_bl_ftp_user.changed
+
+- hosts: ui
+  become: yes
+  vars:
+    httpd_webservice: 'website'
+    httpd_ServerAdmin: 'opensource-announce@cse.ohio-state.edu'
+    httpd_LoadModules:
+      - 'alias'
+      - 'dir'
+      - 'logio'
+      - 'log_config'
+      - 'mime'
+      - 'mime_magic'
+      - 'rewrite'
+    httpd_LogLevel: 'warn'
+    httpd_DocumentRoot: '/srv/website'
+    iptables_filter_rules:
+      - chain: input
+        comment: OpenSSH 22/tcp
+        source_address: 0.0.0.0/0
+        destination_port: 22
+        protocol: tcp
+        target: accept
+      - chain: input
+        comment: HTTP 80/tcp
+        source_address: 0.0.0.0/0
+        destination_port: 80
+        protocol: tcp
+        target: accept
+      - chain: input
+        comment: HTTPS 443/tcp
+        source_address: 0.0.0.0/0
+        destination_port: 443
+        protocol: tcp
+        target: accept
+
+  roles:
+
+    - iptables
+    - httpd
+
+  tasks:
+
+    - name: Necessary packages are installed
+      dnf:
+        name: "{{ item }}"
+        state: latest
+      with_items:
+        - 'wget'
+
+    - name: Base of website directory is created
+      file:
+        path: "{{ httpd_DocumentRoot }}"
+        state: directory
+        owner: 'website_builder'
+        group: 'website_builder'
+
+    - name: Static HTML files are transferred from BL server
+      become_user: 'website_builder'
+      command: wget -mP /srv/website --no-host-directories ftp://websitebl01ubto.bld.opensource.osu.edu
+
+    - name: Apache is restarted
+      service:
+        name: 'httpd'
+        state: restarted

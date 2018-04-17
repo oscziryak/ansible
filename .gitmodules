@@ -1,0 +1,6 @@
+[submodule "roles/httpd"]
+	path = roles/httpd
+	url = https://github.com/smacz42/ansible-role-httpd.git
+[submodule "roles/iptables"]
+	path = roles/iptables
+	url = https://github.com/smacz42/ansible-role-iptables.git
