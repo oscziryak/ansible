@@ -1,17 +1,26 @@
+#
+# This playbook creates or modifies an LDAP account based on the attributes given to the prompts below. This should be
+# run only by a sysadmin, as they would be the only ones who could create a new entry or modify an existing entry in
+# the LDAP hierarchy. This should not be used as a password-change script. However, this _can_ be used to grant
+# membership into application groups by including an application server in the inventory that is passed.
+#
+#     ansible-playbook -i inventory_edt_user.inv ldap_user.yml --ask-ssh-pass
+#
+---
 - hosts: all
   vars_prompt:
-    - name: "{{ ldap_user_acct_type_selection }}"
-      prompt: "Please enter the user's type:\n  1. svcaccts\n   2. people)"
+    - name: ldap_user_acct_type_selection
+      prompt: "Please enter the LDAP account's type:\n  1. svcaccts\n   2. people)"
       private: yes
-    - name: "{{ ldap_user_acct_entry }}"
-      prompt: "Please enter the username for the account"
+    - name: ldap_user_acct_entry
+      prompt: "Please enter the username for the LDAP account"
       private: no
-    - name: "{{ ldap_user_acct_userPassword }}"
-      prompt: "Please enter the user's account password"
+    - name: ldap_user_acct_userPassword
+      prompt: "Please enter the LDAP account's password"
       private: yes
-    - name: "{{ ldap_user_acct_gecos }}"
-      prompt: "Please enter the user's name (gecos)"
-      private: no
+    - name: ldap_user_acct_userPassword2
+      prompt: "Please repeat the password"
+      private: yes
   tasks:
     - set_fact:
       ldap_user_acct_type: 'svcaccts'
@@ -20,5 +29,9 @@
     - set_fact:
       ldap_user_acct_type: 'people'
       when: ldap_user_acct_type_selection == '2'
+
+    - fail:
+        msg: "The passwords supplied didn't match"
+      when: ldap_user_acct_userPassword != ldap_user_acct_userPassword2
 
     - include_role: ldap_user

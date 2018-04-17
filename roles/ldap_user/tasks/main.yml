@@ -5,7 +5,7 @@
 # to the applications are
 
 - name: (ldap_user) Find highest UID for {{ ldap_user_acct_type }}
-  command: ldapsearch -vxZZWD "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu" -b ou={{ ldap_user_acct_type }},dc=opensource,dc=osu,dc=edu | awk '/uidNumber: / {print $2}' | sort | tail -n 1
+  command: ldapsearch -vxZZD "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu" -w {{ ansible_ssh_pass }} -b ou={{ ldap_user_acct_type }},dc=opensource,dc=osu,dc=edu | awk '/uidNumber: / {print $2}' | sort | tail -n 1
   register: ldap_user_highest_id_number
 
 - name: (ldap_user) LDAP user entry is created
@@ -44,7 +44,7 @@
       cn: "{{ ldap_user_acct_entry }}"
       uid: "{{ ldap_user_acct_entry }}"
       homeDirectory: "/home/{{ ldap_user_acct_entry }}"
-      gecos: "{{ ldap_user_acct_gecos }}"
+      gecos: "{{ ldap_user_acct_entry }}"
       loginShell: '/bin/bash'
       userPassword: "{{ ldap_user_acct_userPassword }}"
   run_once: True
@@ -80,10 +80,10 @@
   run_once: True
   delegate_to: localhost
 
-- name: (ldap_user) ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu is present
+- name: (ldap_user) ou={{ ansible_local.osc_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu is present
   ldap_entry:
     server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
-    dn: "ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu"
+    dn: "ou={{ ansible_local.osc_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu"
     bind_dn: "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu"
     bind_pw: "{{ ansible_ssh_pass }}"
     state: present
@@ -93,56 +93,31 @@
     attributes:
       ou: "{{ ansible_local.osc_facts.app }}"
 
-- block:
+- name: (ldap_user) Find existing group number for {{ ansible_local.osc_facts.app }} application group
+  shell: "group_number=$(ldapsearch -vxZZD 'uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu' -w {{ ansible_ssh_pass }} -b ou={{ ansible_local.osc_facts.app }},dc=opensource,dc=osu,dc=edu | awk '/gidNumber: / {print $2}' | sort | tail -n 1); echo ${group_number:1:2}"
+  register: ldap_user_host_group_number
 
-  - name: (ldap_user) cn=svcaccts,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu is present and includes {{ ldap_user_acct_entry }}
-    ldap_entry:
-      server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
-      dn: "cn=svcaccts,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu"
-      bind_dn: "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu"
-      bind_pw: "{{ ansible_ssh_pass }}"
-      state: present
-      objectClass:
-        - 'top'
-        - 'groupofnames'
-      attributes:
-        cn: 'svcaccts'
-        member: "cn={{ ldap_user_acct_entry }},ou=svcaccts,dc=opensource,dc=osu,dc=edu"
-    delegate_to: localhost
+- name: (ldap_user) cn={% if ldap_user_acct_type == 'svcaccts' %}appsvcaccts{% else %}appadmins{% endif %},ou={{ ansible_local.osc_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu is present and includes {{ ldap_user_acct_entry }}
+  ldap_entry:
+    server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
+    dn: "cn={% if ldap_user_acct_type == 'svcaccts' %}appsvcaccts{% else %}appadmins{% endif %},ou={{ ansible_local.osc_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu"
+    bind_dn: "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu"
+    bind_pw: "{{ ansible_ssh_pass }}"
+    state: present
+    objectClass:
+      - 'posixgroup'
+      - 'groupofnames'
+    attributes:
+      cn: "{% if ldap_user_acct_type == 'svcaccts' %}appsvcaccts{% else %}appadmins{% endif %}"
+      gidNumber: '4{{ ldap_user_host_group_number }}0{% if ldap_user_acct_type == 'svcaccts' %}2{% else %}1{% endif %}
+      member: "uid={{ ldap_user_acct_entry }},ou={{ ldap_user_acct_type }},dc=opensource,dc=osu,dc=edu"
+  delegate_to: localhost
 
-  - name: (ldap_user) {{ ldap_user_acct_entry }} is added as a svcacct to the inventory hosts
-    ldap_addr:
-      dn: "cn=svcaccts,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu"
-      state: present
-      name: member
-      values: "{{ ldap_user_acct_entry }},ou=svcaccts,dc=opensource,dc=osu,dc=edu"
-    delegate_to: localhost
+- name: (ldap_user) {{ ldap_user_acct_entry }} is added as an {% if ldap_user_acct_type == 'svcaccts' %}appsvcaccts{% else %}appadmins{% endif %} to the inventory hosts
+  ldap_addr:
+    dn: "cn={% if ldap_user_acct_type == 'svcaccts' %}appsvcaccts{% else %}appadmins{% endif %},ou={{ ansible_local.osc_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu"
+    state: present
+    name: member
+    values: "uid={{ ldap_user_acct_entry }},ou={{ ldap_user_acct_type }},dc=opensource,dc=osu,dc=edu"
+  delegate_to: localhost
 
-  when: ldap_user_acct_type == 'svcaccts'
-
-- block:
-
-  - name: (ldap_user) cn=admins,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu is present and includes {{ ldap_user_acct_entry }}
-    ldap_entry:
-      server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
-      dn: "cn=admins,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu"
-      bind_dn: "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu"
-      bind_pw: "{{ ansible_ssh_pass }}"
-      state: present
-      objectClass:
-        - 'top'
-        - 'groupofnames'
-      attributes:
-        cn: 'admins'
-        member: "cn={{ ldap_user_acct_entry }},ou=people,dc=opensource,dc=osu,dc=edu"
-    delegate_to: localhost
-
-  - name: (ldap_user) {{ ldap_user_acct_entry }} is added as an admin to the inventory hosts
-    ldap_addr:
-      dn: "cn=admins,ou={{ ansible_local.osc_facts.app }},ou=ansible,dc=opensource,dc=osu,dc=edu"
-      state: present
-      name: member
-      values: "{{ ldap_user_acct_entry }},ou=people,dc=opensource,dc=osu,dc=edu"
-    delegate_to: localhost
-
-  when: ldap_user_acct_type == 'people'
