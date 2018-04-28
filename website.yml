@@ -55,19 +55,25 @@
         repo: 'https://github.com/osuosc/website.git'
         dest: '/opt/website'
         force: yes
+      register: repo
 
-    - name: Website dependencies are installed
-      command: bundle install
-      args:
-        chdir: /opt/website
+    - name: Repo has been updated
+      block:
 
-    - name: Site is built
-      command: bundle exec rake --trace gen_site
-      args:
-        chdir: /opt/website
+      - name: Website dependencies are installed
+        command: bundle install
+        args:
+          chdir: /opt/website
 
-    - name: Static HTML is deployed to "{{ httpd_DocumentRoot }}"
-      command: rsync -av /opt/website/_site/ /srv/website
+      - name: Site is built
+        command: bundle exec rake --trace gen_site
+        args:
+          chdir: /opt/website
+
+      - name: Static HTML is deployed to "{{ httpd_DocumentRoot }}"
+        command: rsync -av /opt/website/_site/ "{{ httpd_DocumentRoot }}"
+
+      when: repo.changed
 
     - name: vsftpd is set to allow anonymous logins
       become_user: root
@@ -140,7 +146,7 @@
       with_items:
         - 'wget'
 
-    - name: Base of website directory is created
+    - name: Base of website directory is present
       file:
         path: "{{ httpd_DocumentRoot }}"
         state: directory
@@ -149,7 +155,7 @@
 
     - name: Static HTML files are transferred from BL server
       become_user: 'website_builder'
-      command: wget -mP /srv/website --no-host-directories ftp://websitebl01ubto.bld.opensource.osu.edu
+      command: wget -mP {{ httpd_DocumentRoot }} --no-host-directories ftp://websitebl01ubto.bld.opensource.osu.edu
 
     - name: Apache is restarted
       service:

@@ -4,14 +4,14 @@
 # the LDAP hierarchy. This should not be used as a password-change script. However, this _can_ be used to grant
 # membership into application groups by including an application server in the inventory that is passed.
 #
-#     ansible-playbook -i inventory_edt_user.inv ldap_user.yml --ask-ssh-pass
+#     ansible-playbook -ki inventory_edt_user.inv ldap_user.yml --vault-password-file ~/.vault_pass
 #
 ---
 - hosts: all
   vars_prompt:
     - name: ldap_user_acct_type_selection
-      prompt: "Please enter the LDAP account's type:\n  1. svcaccts\n   2. people)"
-      private: yes
+      prompt: "Please enter the LDAP account's type:\n   1. svcaccts\n   2. people"
+      private: no
     - name: ldap_user_acct_entry
       prompt: "Please enter the username for the LDAP account"
       private: no
@@ -23,15 +23,16 @@
       private: yes
   tasks:
     - set_fact:
-      ldap_user_acct_type: 'svcaccts'
+        ldap_user_acct_type: 'svcaccts'
       when: ldap_user_acct_type_selection == '1'
 
     - set_fact:
-      ldap_user_acct_type: 'people'
+        ldap_user_acct_type: 'people'
       when: ldap_user_acct_type_selection == '2'
 
     - fail:
         msg: "The passwords supplied didn't match"
       when: ldap_user_acct_userPassword != ldap_user_acct_userPassword2
 
-    - include_role: ldap_user
+    - import_role:
+        name: 'ldap_user'

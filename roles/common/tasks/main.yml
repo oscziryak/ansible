@@ -27,7 +27,7 @@
     dest: "/etc/ansible/facts.d"
     owner: "root"
     group: "root"
-    mode: 0644
+    recurse: yes
     state: directory
   become: yes
 

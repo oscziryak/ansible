@@ -31,6 +31,8 @@ app_dict = {
     'pfsdmz': 'pfsense',
     'pfscore': 'pfsense',
     'cacerts': 'cacerts',
+    'pfscore': 'pfsense',
+    'cacerts': 'cacerts',
 }
 
 loc = loc_dict[loc]
