@@ -28,8 +28,8 @@
       uid: "{{ ldap_user_acct_entry }}"
       # These are only changed if the entry has to be created in the first place. It does not get overwritten by this
       # module
-      uidNumber: "{{ (ldap_user_highest_id_number | int) + 1 }}"
-      gidNumber: "{{ (ldap_user_highest_id_number | int) + 1 }}"
+      uidNumber: "{{ (ldap_user_highest_id_number.stdout | int) + 1 }}"
+      gidNumber: "{{ (ldap_user_highest_id_number.stdout | int) + 1 }}"
       homeDirectory: "/home/{{ ldap_user_acct_entry }}"
   run_once: True
   delegate_to: localhost
@@ -74,7 +74,7 @@
       # This is only changed if the entry has to be created in the first place. It does not get overwritten by this
       # module
       member: "uid={{ ldap_user_acct_entry }},ou={{ ldap_user_acct_type }},dc=opensource,dc=osu,dc=edu"
-      gidNumber: "{{ (ldap_user_highest_id_number | int) + 1 }}"
+      gidNumber: "{{ (ldap_user_highest_id_number.stdout | int) + 1 }}"
   run_once: True
   delegate_to: localhost
 
@@ -90,7 +90,7 @@
   run_once: True
   delegate_to: localhost
 
-- name: (ldap_user) ou={{ ansible_local.osc_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu is present
+- name: (ldap_user) application ou is present
   ldap_entry:
     server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
     dn: "ou={{ hostvars[inventory_hostname]['ansible_local']['osc_facts']['app'] }},ou=applications,dc=opensource,dc=osu,dc=edu"
@@ -104,7 +104,22 @@
       ou: "{{ hostvars[inventory_hostname]['ansible_local']['osc_facts']['app'] }}"
   delegate_to: localhost
 
-- name: (ldap_user) Find appropriate group number for {{ ansible_local.osc_facts.app }} application group
+- name: (ldap_user) application's 'groups' ou is present
+  ldap_entry:
+    server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
+    dn: "ou=groups,ou={{ hostvars[inventory_hostname]['ansible_local']['osc_facts']['app'] }},ou=applications,dc=opensource,dc=osu,dc=edu"
+    bind_dn: "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu"
+    bind_pw: "{{ ansible_ssh_pass }}"
+    state: present
+    objectClass:
+      - 'top'
+      - 'organizationalunit'
+    attributes:
+      ou: "groups"
+  delegate_to: localhost
+
+
+- name: (ldap_user) Find appropriate group number for application group
   # In the case where we're creating appsvcaccts when an appadmins already exist, we need the number
   # of the current application instead of the highest number. Otherwise we need to return the
   # highest number plus one to create the new standard for this application. ldap_host does not
@@ -127,10 +142,10 @@
   args:
     executable: '/bin/bash'
 
-- name: "(ldap_user) cn={% if ldap_user_acct_type == 'svcaccts' %}appsvcaccts{% else %}appadmins{% endif %},ou={{ ansible_local.osc_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu is present and includes {{ ldap_user_acct_entry }}"
+- name: (ldap_user) account type group is present and includes the user
   ldap_entry:
     server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
-    dn: "cn={% if ldap_user_acct_type == 'svcaccts' %}appsvcaccts{% else %}appadmins{% endif %},ou={{ ansible_local.osc_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu"
+    dn: "cn={% if ldap_user_acct_type == 'svcaccts' %}appsvcaccts{% else %}appadmins{% endif %},ou=groups,ou={{ ansible_local.osc_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu"
     bind_dn: "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu"
     bind_pw: "{{ ansible_ssh_pass }}"
     state: present
@@ -141,18 +156,15 @@
       cn: "{% if ldap_user_acct_type == 'svcaccts' %}appsvcaccts{% else %}appadmins{% endif %}"
       gidNumber: "4{{ ldap_user_host_group_number.stdout }}0{% if ldap_user_acct_type == 'svcaccts' %}2{% else %}1{% endif %}"
       member: "uid={{ ldap_user_acct_entry }},ou={{ ldap_user_acct_type }},dc=opensource,dc=osu,dc=edu"
-  run_once: True
   delegate_to: localhost
 
-- name: (ldap_user) {{ ldap_user_acct_entry }} is added as an {% if ldap_user_acct_type == 'svcaccts' %}appsvcaccts{% else %}appadmins{% endif %} to the inventory hosts
+- name: (ldap_user) user is added as the correct account type to the application
   ldap_attr:
     server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
     bind_dn: "uid={{ ansible_user_id }},ou=people,dc=opensource,dc=osu,dc=edu"
     bind_pw: "{{ ansible_ssh_pass }}"
-    dn: "cn={% if ldap_user_acct_type == 'svcaccts' %}appsvcaccts{% else %}appadmins{% endif %},ou={{ ansible_local.osc_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu"
+    dn: "cn={% if ldap_user_acct_type == 'svcaccts' %}appsvcaccts{% else %}appadmins{% endif %},ou=groups,ou={{ ansible_local.osc_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu"
     state: present
     name: member
     values: "uid={{ ldap_user_acct_entry }},ou={{ ldap_user_acct_type }},dc=opensource,dc=osu,dc=edu"
-  run_once: True
   delegate_to: localhost
-

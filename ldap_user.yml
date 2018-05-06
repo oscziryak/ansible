@@ -10,29 +10,33 @@
 - hosts: all
   vars_prompt:
     - name: ldap_user_acct_type_selection
-      prompt: "Please enter the LDAP account's type:\n   1. svcaccts\n   2. people"
+      prompt: "    1. svcaccts\n    2. people\nPlease enter the LDAP account type"
       private: no
     - name: ldap_user_acct_entry
       prompt: "Please enter the username for the LDAP account"
       private: no
-    - name: ldap_user_acct_userPassword
+    - name: ldap_user_acct_userPassword_raw
       prompt: "Please enter the LDAP account's password"
       private: yes
-    - name: ldap_user_acct_userPassword2
+    - name: ldap_user_acct_userPassword2_raw
       prompt: "Please repeat the password"
       private: yes
   tasks:
     - set_fact:
-        ldap_user_acct_type: 'svcaccts'
-      when: ldap_user_acct_type_selection == '1'
-
-    - set_fact:
-        ldap_user_acct_type: 'people'
-      when: ldap_user_acct_type_selection == '2'
+        ldap_user_acct_type: "{% if ldap_user_acct_type_selection == '1' %}svcaccts{% elif ldap_user_acct_type_selection == '2' %}people{% endif %}"
 
     - fail:
         msg: "The passwords supplied didn't match"
-      when: ldap_user_acct_userPassword != ldap_user_acct_userPassword2
+      when: ldap_user_acct_userPassword_raw != ldap_user_acct_userPassword2_raw
+
+    - name: Password is hashed
+      command: /usr/sbin/slappasswd -s {{ ldap_user_acct_userPassword_raw }}
+      delegate_to: localhost
+      run_once: True
+      register: ldap_user_acct_userPassword_hashed
+
+    - set_fact:
+        ldap_user_acct_userPassword: "{{ ldap_user_acct_userPassword_hashed.stdout }}"
 
     - import_role:
         name: 'ldap_user'
