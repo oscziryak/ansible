@@ -1,0 +1,13 @@
+---
+# defaults file for dns_manage
+
+########################################################################################## CHANGEME
+
+dns_manage_host_state: present
+
+##################################################################################### SANE DEFAULTS
+
+dns_manage_named_master: 'dnsmastin01fato.adm.opensource.osu.edu'
+dns_manage_named_slaves:
+  - 'dnsslavin01fbto.bld.opensource.osu.edu'
+  - 'dnsslavin01fdto.dmz.opensource.osu.edu'

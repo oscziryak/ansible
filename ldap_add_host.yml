@@ -1,14 +1,14 @@
----
 # For running this the first time on a new server, we can't auth with our LDAP credentials, b/c that's what this
 # is setting up. So we auth with the root PW and go from there.
 #
-# ansible-playbook -ki websiteui01fdto, --ask-vault-pass ldap_host.yml -u root
+#   ansible-playbook -ki websiteui01fdto, ldap_add_host.yml -u root --vault-password-file ~/.vault_pass
 #
-
+---
 - hosts: all
   become: yes
   vars:
     - ldap_host_user: "{{ lookup('env','USER') }}"
+    - dns_manage_host_state: present
   vars_prompt:
     - name: "ldap_host_user_passwd"
       prompt: "Please enter your LDAP password"
@@ -16,3 +16,4 @@
   roles:
     - common
     - ldap_host
+    - { role: 'dns_manage', ansible_ssh_user: "{{ ldap_host_user }}", ansible_ssh_pass: "{{ ldap_host_user_passwd }}", ansible_become_pass: "{{ ldap_host_user_passwd }}" }

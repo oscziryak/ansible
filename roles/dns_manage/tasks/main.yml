@@ -1,0 +1,72 @@
+---
+# tasks file for dns_manage
+
+- name: (dns_manage) DNS Master server is added to inventory
+  add_host:
+    name: "{{ dns_manage_named_master }}"
+
+- name: (dns_manage) DNS slave servers are added to inventory under the group 'dnsslaves'
+  add_host:
+    name: "{{ item }}"
+    groups: 'dnsslaves'
+  with_items: "{{ dns_manage_named_slaves }}"
+
+- block:
+  - name: (dns_manage) Forward Lookup Zone entry line is present
+    lineinfile:
+      # Get the environtment that we're in - a.k.a 'adm' for 'dnsmastin01fato.adm.opensource.osu.edu'
+      path: "/srv/named/{{ ansible_fqdn.split('.')[1] }}.opensource.osu.edu"
+      regexp: "^{{ ansible_hostname }}"
+      line: "{{ ansible_hostname }} A {{ ansible_default_ipv4.address }}"
+      state: "{{ dns_manage_host_state }}"
+    register: dns_manage_forward_lookup
+    delegate_to: "{{ dns_manage_named_master }}"
+
+  - name: (dns_manage) Reverse Lookup Zone entry line is present
+    lineinfile:
+      # Get the subnet that we're in - a.k.a '3' for '10.0.3.67'
+      path: "/srv/named/{{ ansible_default_ipv4.address.split('.')[2] }}.0.10.db"
+      # Get the last octet
+      regexp: "^{{ ansible_default_ipv4.address.split('.')[3] }}"
+      # We want to make sure we have the period at the end of the fqdn so it doesn't appent
+      # opensource.osu.edu onto it a second time
+      line: "{{ ansible_default_ipv4.address.split('.')[3] }} IN PTR {{ ansible_fqdn }}."
+      state: "{{ dns_manage_host_state }}"
+    register: dns_manage_reverse_lookup
+    delegate_to: "{{ dns_manage_named_master }}"
+
+  - block:
+    - name: (dns_manage) Old DNS serial versions are registered
+      shell: grep ';Serial' {{ item }} | tr -s ' ' | cut -d ' ' -f 2
+      with_items:
+        - "/srv/named/{{ ansible_fqdn.split('.')[1] }}.opensource.osu.edu"
+        - "/srv/named/{{ ansible_default_ipv4.address.split('.')[2] }}.0.10.db"
+      delegate_to: "{{ dns_manage_named_master }}"
+      register: dns_manage_serial_number
+
+    - name: (dns_manage) Set dns_manage_serial_today for convenience
+      set_fact:
+        dns_manage_serial_today: "{{ ansible_date_time.year }}{{ ansible_date_time.month }}{{ ansible_date_time.day }}"
+
+    - name: (dns_manage) Old DNS serial numbers are changed
+      lineinfile:
+        path: "{{ item }}"
+        regexp: ";Serial"
+        line: "        {{ dns_manage_serial_today }}{% if item.stdout[:8] == dns_manage_serial_today %}{{ item.stdout.split[8:] | int + 1 }}{% else %}01{% endif %} ;Serial" 
+      delegate_to: "{{ dns_manage_named_master }}"
+      register: dns_manage_increment_serial
+
+    when:
+      - dns_manage_reverse_lookup.changed or dns_manage_forward_lookup.changed
+
+  when:
+    - "'dnsmaster' not in group_names"
+    - "'dnsslaves' not in group_names"
+
+- name: (dns_manage) Service 'named' is reloaded
+  systemd:
+    name: named
+    state: reloaded
+  when:
+    - "'dnsmaster' in group_names or 'dnsslaves' in group_names"
+    - dns_manage_increment_serial.changed
