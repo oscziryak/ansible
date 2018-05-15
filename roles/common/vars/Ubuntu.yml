@@ -1,3 +1,4 @@
 common_pkgs:
-  - vim
-  - python3
+  - 'vim'
+  - 'python3'
+  - 'rsync'
