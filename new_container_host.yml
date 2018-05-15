@@ -9,10 +9,10 @@
   vars_prompt:
     - name: container_host_guest_hostname
       prompt: "Please enter the hostname of the guest"
-      private: yes
+      private: no
     - name: container_host_guest_ip_addr
       prompt: "Please enter the IP address of the guest"
-      private: yes
+      private: no
   roles:
     - common
     - { role: container_host, container_host_guest_state: 'present' }

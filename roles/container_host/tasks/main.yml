@@ -2,6 +2,7 @@
 # tasks file for container_host
 
 - name: (container_host) Guest Environment name is set
+  set_fact:
     container_host_guest_environment: |-
       {% if container_host_guest_hostname[-3] == 'a' -%}
         adm
