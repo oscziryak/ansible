@@ -14,5 +14,4 @@
       prompt: "Please enter the IP address of the guest"
       private: no
   roles:
-    - common
     - { role: container_host, container_host_guest_state: 'present' }
