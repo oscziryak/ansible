@@ -1,0 +1,13 @@
+---
+# defaults file for container_host
+
+########################################################################################## CHANGE ME
+
+container_host_guest_os: 'fedora'
+container_host_guest_os_version: '28'
+# TODO: Make this get the right subnet octect for the environment that it's in
+container_host_guest_ip_addr: '10.0.3.92'
+
+###################################################################################### SANE DEFAULTS
+
+container_host_guest_state: present

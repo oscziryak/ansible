@@ -1,0 +1,18 @@
+# This script creates a new container on the host. Keep in mind that Turing does not auth via LDAP,
+# so we will most likely have to connect via oscadmin.
+#
+#   ansible-playbook -ki websiteui01fdto, new_container_host.yml -u oscadmin --ask-become-pass
+#
+---
+- hosts: all
+  become: yes
+  vars_prompt:
+    - name: container_host_guest_hostname
+      prompt: "Please enter the hostname of the guest"
+      private: yes
+    - name: container_host_guest_ip_addr
+      prompt: "Please enter the IP address of the guest"
+      private: yes
+  roles:
+    - common
+    - { role: container_host, container_host_guest_state: 'present' }
