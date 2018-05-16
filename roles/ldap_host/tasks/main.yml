@@ -114,7 +114,7 @@
     - (ldap_host) Restart oddjobd
 
 - name: (ldap_host) SSSD is enabled for system authentication on Fedora
-  command: authconfig --update --enablesssd --enablesssdauth
+  command: authconfig --update --enablesssd --enablesssdauth --enablemkhomedir --updateall
   when: ansible_distribution in ['Fedora']
 
 - name: (ldap_host) SUDOers is configured for SSSD
