@@ -35,41 +35,57 @@
 
 - name: (container_host) Directory to mount to is created
   file:
-    path: "/srv/named/libvirt/filesystems/{{ container_host_guest_environment }}-{{ container_host_guest_hostname }}"
+    path: "/srv/libvirt/filesystems/{{ container_host_guest_environment }}-{{ container_host_guest_hostname }}"
     state: directory
   register: container_host_guest_directory
 
 - name: (container_host) LVM volume is mounted
   mount:
     src: "/dev/mapper/system-{{ container_host_guest_environment }}--{{ container_host_guest_hostname }}"
-    path: "/srv/named/libvirt/filesystems/{{ container_host_guest_environment }}-{{ container_host_guest_hostname }}"
-    state: "{{ container_host_guest_state }}"
+    path: "/srv/libvirt/filesystems/{{ container_host_guest_environment }}-{{ container_host_guest_hostname }}"
+    state: "{% if container_host_guest_state == 'present' %}mounted{% else %}absent{% endif %}"
+    fstype: xfs
 
 - name: (container_host) Root filesystem is deployed
-  shell: "virt-bootstrap virt-builder://{{ container_host_guest_os }}-{{ container_host_guest_os_version }} /srv/named/libvirt/filesystems/{{ container_host_guest_environment }}-{{ container_host_guest_hostname }}"
+  shell: "virt-bootstrap virt-builder://{{ container_host_guest_os }}-{{ container_host_guest_os_version }} /srv/libvirt/filesystems/{{ container_host_guest_environment }}-{{ container_host_guest_hostname }}"
   when: container_host_guest_directory.changed
   register: container_host_guest_creation
 
 - name: (container_host) Networking defaults are set
   lineinfile:
-    path: "/srv/named/libvirt/filesystems/{{ container_host_guest_environment }}-{{ container_host_guest_hostname }}/etc/sysconfig/network-scripts/ifcfg-ens2"
-    regex: "{{ item.regex }}"
+    path: "/srv/libvirt/filesystems/{{ container_host_guest_environment }}-{{ container_host_guest_hostname }}/etc/sysconfig/network-scripts/ifcfg-ens2"
+    regexp: "{{ item.regexp }}"
     line: "{{ item.line }}"
   with_items:
-    - { regex: "^IPADDR0=", line: "IPADDR0={{ container_host_ip_addr }}"}
-    - { regex: "^PREFIX0=", line: "PREFIX0=24"}
-    - { regex: "^GATEWAY0=", line: "GATEWAY0=10.0.{{ container_host_guest_subnet }}.1{{ container_host_subnet }}"}
-    - { regex: "^DNS1=", line: "DNS1=10.0.{{ container_host_guest_subnet }}.33"}
-    - { regex: "^DOMAIN=", line: "DOMAIN={{ container_host_guest_environment }}.opensource.osu.edu"}
+    - { regexp: "^IPADDR0=", line: "IPADDR0={{ container_host_guest_ip_addr }}" }
+    - { regexp: "^PREFIX0=", line: "PREFIX0=24" }
+    - { regexp: "^GATEWAY0=", line: "GATEWAY0=10.0.{{ container_host_guest_subnet }}.1{{ container_host_guest_subnet }}" }
+    - { regexp: "^DNS1=", line: "DNS1=10.0.{{ container_host_guest_subnet }}.33" }
+    - { regexp: "^DOMAIN=", line: "DOMAIN={{ container_host_guest_environment }}.opensource.osu.edu" }
+    - { regexp: "^IPV6INIT", line: "IPV6INIT=no" }
+    - { regexp: "^BOOTPROTO", line: "BOOTPROTO=none" }
+    - { regexp: "^NETBOOT", line: "NETBOOT=no" }
+    - { regexp: "^NAME", line: "NAME=eth0" }
+    - { regexp: "^DEVICE", line: "DEVICE=eth0" }
 
 - name: (container_host) Hostname is set
   lineinfile:
-    path: "/srv/named/libvirt/filesystems/{{ container_host_guest_environment }}-{{ coGntainer_host_guest_hostname }}/etc/hostname"
-    regex: "^.*$"
+    path: "/srv/libvirt/filesystems/{{ container_host_guest_environment }}-{{ container_host_guest_hostname }}/etc/hostname"
+    regexp: "^.*$"
     line: "{{ container_host_guest_hostname }}.{{ container_host_guest_environment }}.opensource.osu.edu"
 
 - name: (container_host) Container created via virt-manager
   pause:
-    prompt: "Please make sure that {{ container_host_guest_environment }}-{{ container_host_guest_hostname }} is set up via virt-manager.\n\nSee https://github.com/OSUOSC/documentation/blob/master/systems/containers.md for more details\n\nThe root password is {{ item }}"
-  when: "'root password' in item }}"
+    prompt: "Please make sure that {{ container_host_guest_environment }}-{{ container_host_guest_hostname }} is set up via virt-manager.\n\nSee https://github.com/OSUOSC/documentation/blob/master/systems/containers.md for more details\n\nThe root password is {{ item.split()[-1] }}"
+  when: "'password of root' in item"
   with_items: "{{ container_host_guest_creation.stdout_lines }}"
+
+- name: (container_host) MAC Address of NIC is registered
+  shell: grep 'mac address' /etc/libvirt/lxc/{{ container_host_guest_environment }}-{{ container_host_guest_hostname }}.xml | cut -d "'" -f 2
+  register: container_host_guest_mac_address
+
+- name: (container_host) MAC Address of NIC is set
+  lineinfile:
+    path: "/srv/libvirt/filesystems/{{ container_host_guest_environment }}-{{ container_host_guest_hostname }}/etc/sysconfig/network-scripts/ifcfg-ens2"
+    regexp: "^HWADDR"
+    line: "HWADDR={{ container_host_guest_mac_address.stdout }}"
