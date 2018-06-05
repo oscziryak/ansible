@@ -2,3 +2,4 @@ common_pkgs:
   - 'vim'
   - 'bind-utils'
   - 'rsync'
+  - 'sudo'

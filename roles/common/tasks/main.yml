@@ -33,23 +33,23 @@
 
 - name: (common) Custom facts file is deployed
   template:
-    src: "../files/osc_facts.fact"
-    dest: "/etc/ansible/facts.d/osc_facts.fact"
+    src: "../files/host_facts.fact"
+    dest: "/etc/ansible/facts.d/host_facts.fact"
     owner: "root"
     group: "root"
     mode: 0755
   become: yes
-  register: common_osc_facts
+  register: common_host_facts
 
 - name: (common) Facts are re-gathered
   setup:
-  when: common_osc_facts.changed
+  when: common_host_facts.changed
 
 - name: (common) Vars files are included
   include_vars: "{{ item }}"
   with_items:
     - "{{ ansible_distribution }}.yml"
-    - "{{ ansible_local.osc_facts.env }}.yml"
+    - "{{ ansible_local.host_facts.env }}.yml"
 
 - name: (common) Packages are installed
   package:

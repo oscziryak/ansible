@@ -11,14 +11,15 @@ import socket
 
 fqdn = socket.getfqdn()
 env = fqdn.split('.')[1]
-loc = fqdn.split('.')[0][-1]
-host = fqdn.split('.')[0][-2]
+loc_code = fqdn.split('.')[0][-1]
+host_code = fqdn.split('.')[0][-2]
 parity = fqdn.split('.')[0][-6:-4]
 func = fqdn.split('.')[0][-8:-6]
 app = fqdn.split('.')[0][:-8]
 
-loc_dict = {'o': 'office'}
-host_dict = {'t': 'turing', 'w': 'switch', 's': 'stallman', 'f': 'focault'}
+loc_dict = {'o': 'office', 'h': 'hobbithole'}
+host_dict = {'t': 'turing', 'w': 'switch', 's': 'stallman', 'f': 'focault', 'v': 'vhost'}
+env_code_dict = {'blu': 'b', 'bld': 'b', 'dmz': 'd', 'adm': 'a'}
 app_dict = {
     'ldapprv': 'ldap',
     'ldapcon': 'ldap',
@@ -30,14 +31,14 @@ app_dict = {
     'pfsadm': 'pfsense',
     'pfsdmz': 'pfsense',
     'pfscore': 'pfsense',
-    'cacerts': 'cacerts',
-    'pfscore': 'pfsense',
+    'pfsense': 'pfsense',
     'cacerts': 'cacerts',
 }
 
-loc = loc_dict[loc]
-host = host_dict[host]
+loc = loc_dict[loc_code]
+host = host_dict[host_code]
 app = app_dict[app]
+env_code = env_code_dict[env]
 
 if int(parity) % 2 == 0:
     parity = 'even'
@@ -47,8 +48,11 @@ else:
 # Hand off the below values to Ansible via JSON
 print(json.dumps({
     "env": env,
+    "env_code": env_code,
     "loc": loc,
+    "loc_code": loc_code,
     "host": host,
+    "host_code": host_code,
     "parity": parity,
     "func": func,
     "app": app,

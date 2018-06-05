@@ -155,7 +155,7 @@
 
     - name: Static HTML files are transferred from BL server
       become_user: 'website_builder'
-      command: wget -mP {{ httpd_DocumentRoot }} --no-host-directories ftp://websitebl01ubto.bld.opensource.osu.edu
+      command: wget -mP {{ httpd_DocumentRoot }} --no-host-directories ftp://websitebl01ubto.bld.{{ global_network_domain }}
 
     - name: Apache is restarted
       service:

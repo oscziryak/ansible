@@ -1,0 +1,11 @@
+# This script creates a new container on the host. Keep in mind that Turing does not auth via LDAP,
+# so we will most likely have to connect via oscadmin.
+#
+#   ansible-playbook -ki 10.0.192.64, dns_add_host.yml -u root
+#
+---
+- hosts: all
+  become: yes
+  roles:
+    - common
+    - { role: dns_manage, dns_manage_host_state: 'present' }

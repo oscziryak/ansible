@@ -61,7 +61,7 @@
     - { regexp: "^PREFIX0=", line: "PREFIX0=24" }
     - { regexp: "^GATEWAY0=", line: "GATEWAY0=10.0.{{ container_host_guest_subnet }}.1{{ container_host_guest_subnet }}" }
     - { regexp: "^DNS1=", line: "DNS1=10.0.{{ container_host_guest_subnet }}.33" }
-    - { regexp: "^DOMAIN=", line: "DOMAIN={{ container_host_guest_environment }}.opensource.osu.edu" }
+    - { regexp: "^DOMAIN=", line: "DOMAIN={{ container_host_guest_environment }}.{{ global_network_domain }}" }
     - { regexp: "^IPV6INIT", line: "IPV6INIT=no" }
     - { regexp: "^BOOTPROTO", line: "BOOTPROTO=none" }
     - { regexp: "^NETBOOT", line: "NETBOOT=no" }
@@ -72,7 +72,7 @@
   lineinfile:
     path: "/srv/libvirt/filesystems/{{ container_host_guest_environment }}-{{ container_host_guest_hostname }}/etc/hostname"
     regexp: "^.*$"
-    line: "{{ container_host_guest_hostname }}.{{ container_host_guest_environment }}.opensource.osu.edu"
+    line: "{{ container_host_guest_hostname }}.{{ container_host_guest_environment }}.{{ global_network_domain }}"
 
 - name: (container_host) Container created via virt-manager
   pause:

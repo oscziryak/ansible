@@ -1,2 +1,11 @@
 ---
 # defaults file for ldap_user
+
+############################################################################################################# CHANGE ME
+
+ldap_user_provider_fqdn: "ldapprvin01bbvh.{{ ansible_local.host_facts.env }}.{{ global_network_domain }}"
+ldap_user_state: 'present'
+
+######################################################################################################### SANE DEFAULTS
+
+ldap_user_base_dc: "{% for domain_segment in global_network_domain.split('.') %}dc={{ domain_segment }}{% if not loop.last %},{% endif %}{% endfor %}"

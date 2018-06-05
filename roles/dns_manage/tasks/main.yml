@@ -5,11 +5,73 @@
   add_host:
     name: "{{ dns_manage_named_master }}"
 
+- name: (dns_manage) Set dns_manage_serial_today for convenience
+  set_fact:
+    dns_manage_serial_today: "{{ ansible_date_time.year }}{{ ansible_date_time.month }}{{ ansible_date_time.day }}"
+
 - block:
+
+  - name: (dns_manage) Forward lookup file is registered
+    stat:
+      # Get the environtment that we're in - a.k.a 'adm' for 'dnsmastin01fato.adm.{{ global_network_domain }}'
+      path: "/srv/named/{{ ansible_local.host_facts.env }}.{{ global_network_domain }}.db"
+    register: dns_manage_forward_lookup_file
+    delegate_to: "{{ dns_manage_named_master }}"
+
+  - name: (dns_manage) Reverse lookup file is registered
+    stat:
+      path: "/srv/named/0.10.db"
+    register: dns_manage_reverse_lookup_file
+    delegate_to: "{{ dns_manage_named_master }}"
+
+  #
+  # We're not going to run the next two blocks only once, in case we have more than one environment
+  # or subnetthat we're provisioning. It won't hurt to overwrite the file.
+  #
+  - block:
+
+    - name: (dns_manage) Forward lookup template is deployed
+      template:
+        src: 'forward_zone_file.j2'
+        dest: "/srv/named/{{ ansible_local.host_facts.env }}.{{ global_network_domain }}.db"
+      delegate_to: "{{ dns_manage_named_master }}"
+
+    - name: (dns_manage) Forward lookup zone is specified in '/etc/named.conf'
+      blockinfile:
+        path: '/etc/named.conf'
+        block: |
+          zone "{{ ansible_local.host_facts.env }}.{{ global_network_domain }}" IN {
+              type master;
+              file "/srv/named/{{ ansible_local.host_facts.env }}.{{ global_network_domain }}.db";
+          };
+      delegate_to: "{{ dns_manage_named_master }}"
+
+    when: not dns_manage_forward_lookup_file.stat.exists
+
+  - block:
+
+    - name: (dns_manage) Reverse lookup template is deployed
+      template:
+        src: 'reverse_zone_file.j2'
+        dest: "/srv/named/0.10.db"
+      delegate_to: "{{ dns_manage_named_master }}"
+
+    - name: (dns_manage) Forward lookup zone is specified in '/etc/named.conf'
+      blockinfile:
+        path: '/etc/named.conf'
+        block: |
+          zone "0.10.in-addr.arpa" IN {
+              type master;
+              file "/srv/named/0.10.db";
+          };
+      delegate_to: "{{ dns_manage_named_master }}"
+
+    when: not dns_manage_reverse_lookup_file.stat.exists
+
   - name: (dns_manage) Forward Lookup Zone entry line is present
     lineinfile:
-      # Get the environtment that we're in - a.k.a 'adm' for 'dnsmastin01fato.adm.opensource.osu.edu'
-      path: "/srv/named/{{ ansible_fqdn.split('.')[1] }}.opensource.osu.edu"
+      # Get the environtment that we're in - a.k.a 'adm' for 'dnsmastin01fato.adm.{{ global_network_domain }}'
+      path: "/srv/named/{{ ansible_local.host_facts.env }}.{{ global_network_domain }}.db"
       regexp: "^{{ ansible_hostname }}"
       line: "{{ ansible_hostname }} A {{ ansible_default_ipv4.address }}"
       state: "{{ dns_manage_host_state }}"
@@ -19,12 +81,12 @@
   - name: (dns_manage) Reverse Lookup Zone entry line is present
     lineinfile:
       # Get the subnet that we're in - a.k.a '3' for '10.0.3.67'
-      path: "/srv/named/{{ ansible_default_ipv4.address.split('.')[2] }}.0.10.db"
+      path: "/srv/named/0.10.db"
       # Get the last octet
-      regexp: "^{{ ansible_default_ipv4.address.split('.')[3] }}"
-      # We want to make sure we have the period at the end of the fqdn so it doesn't appent
-      # opensource.osu.edu onto it a second time
-      line: "{{ ansible_default_ipv4.address.split('.')[3] }} IN PTR {{ ansible_fqdn }}."
+      regexp: "^{{ ansible_default_ipv4.address.split('.')[3] }}.{{ ansible_default_ipv4.address.split('.')[2] }}"
+      # We want to make sure we have the period at the end of the fqdn so it doesn't append
+      # {{ global_network_domain }} onto it a second time
+      line: "{{ ansible_default_ipv4.address.split('.')[3] }}.{{ ansible_default_ipv4.address.split('.')[2] }} IN PTR {{ ansible_fqdn }}."
       state: "{{ dns_manage_host_state }}"
     register: dns_manage_reverse_lookup
     delegate_to: "{{ dns_manage_named_master }}"
@@ -33,20 +95,16 @@
     - name: (dns_manage) Old DNS serial versions are registered
       shell: grep ';Serial' {{ item }} | tr -s ' ' | cut -d ' ' -f 2
       with_items:
-        - "/srv/named/{{ ansible_fqdn.split('.')[1] }}.opensource.osu.edu"
-        - "/srv/named/{{ ansible_default_ipv4.address.split('.')[2] }}.0.10.db"
+        - "/srv/named/{{ ansible_local.host_facts.env }}.{{ global_network_domain }}.db"
+        - "/srv/named/0.10.db"
       delegate_to: "{{ dns_manage_named_master }}"
       register: dns_manage_serial_numbers
-
-    - name: (dns_manage) Set dns_manage_serial_today for convenience
-      set_fact:
-        dns_manage_serial_today: "{{ ansible_date_time.year }}{{ ansible_date_time.month }}{{ ansible_date_time.day }}"
 
     - name: (dns_manage) Old DNS serial numbers are changed
       lineinfile:
         path: "{{ item.item }}"
         regexp: ";Serial"
-        line: "        {{ dns_manage_serial_today }}{% if item.stdout[:8] == dns_manage_serial_today %}{{ item.stdout[8:] | int + 1 }}{% else %}01{% endif %} ;Serial" 
+        line: "        {{ dns_manage_serial_today }}{% if item.stdout[:8] == dns_manage_serial_today %}{{ '%02d' | format(item.stdout[8:] | int + 1) }}{% else %}01{% endif %} ;Serial" 
       delegate_to: "{{ dns_manage_named_master }}"
       with_items: "{{ dns_manage_serial_numbers.results }}"
       register: dns_manage_increment_serial

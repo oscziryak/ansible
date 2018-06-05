@@ -1,0 +1,9 @@
+$ORIGIN {{ ansible_local.host_facts.env }}.{{ global_network_domain }}.
+$TTL 86400
+@   IN  SOA {{ dns_manage_named_master }}. root.{{ ansible_local.host_facts.env }}.{{ global_network_domain }} (
+    {{ dns_manage_serial_today }}   ;Serial
+    3600                            ;Refresh
+    1800                            ;Retry
+    604800                          ;Expire
+    86400                           ;Minimum TTL
+)

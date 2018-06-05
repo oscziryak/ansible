@@ -1,5 +1,13 @@
 ---
 # defaults file for ldap_host
 
+############################################################################################################# CHANGE ME
+
+ldap_host_provider_fqdn: "ldapprvin01bbvh.{{ ansible_local.host_facts.env }}.{{ global_network_domain }}"
+ldap_host_state: 'present'
+
+######################################################################################################### SANE DEFAULTS
+
 ldap_host_sssdbind_authtok: "{{ vault_ldap_host_sssdbind_authtok }}"
 ldap_host_managehosts_bindpw: "{{ vault_ldap_host_managehosts_bindpw }}"
+ldap_host_base_dc: "{% for domain_segment in global_network_domain.split('.') %}dc={{ domain_segment }}{% if not loop.last %},{% endif %}{% endfor %}"

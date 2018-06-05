@@ -1,1 +1,1 @@
-ldap_host_server: 'ldapconin01fdto.dmz.opensource.osu.edu'
+ldap_host_server: 'ldapconin01fdto.dmz.{{ global_network_domain }}'

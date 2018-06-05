@@ -5,7 +5,7 @@
   include_vars: "{{ item }}"
   with_items:
   - "{{ ansible_distribution }}.yml"
-  - "{{ ansible_local.osc_facts.env }}.yml"
+  - "{{ ansible_local.host_facts.env }}.yml"
 
 - name: (ldap_host) Required packages are installed and updated
   package:
@@ -20,7 +20,7 @@
 
   - name: (ldap_host) Host is entered into LDAP hosts
     ldap_entry:
-      server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
+      server_uri: "ldap://{{ ldap_host_provider_fqdn }}"
       dn: "cn={{ ansible_hostname }},ou=hosts,dc=opensource,dc=osu,dc=edu"
       # Here we're just using the account of the user invoking this. Any user who runs this should be an admin, or else
       # this isn't going to work. I was _going_ to create uid=managehosts,ou=svcaccts,dc=opensource,[...] but then I'd
@@ -29,7 +29,7 @@
       # the hands of the club admins when it comes to people and hosts.
       bind_dn: "uid={{ ldap_host_user }},ou=people,dc=opensource,dc=osu,dc=edu"
       bind_pw: "{{ ldap_host_user_passwd }}"
-      state: present
+      state: "{{ ldap_host_state }}"
       objectClass:
         - 'top'
         - 'device'
@@ -39,10 +39,10 @@
         iphostnumber: "{{ ansible_default_ipv4.address }}"
         cn: "{{ ansible_hostname }}"
 
-  - name: (ldap_host) ou={{ ansible_local.osc_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu is present
+  - name: (ldap_host) ou={{ ansible_local.host_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu is present
     ldap_entry:
-      server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
-      dn: "ou={{ ansible_local.osc_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu"
+      server_uri: "ldap://{{ ldap_host_provider_fqdn }}"
+      dn: "ou={{ ansible_local.host_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu"
       bind_dn: "uid={{ ldap_host_user }},ou=people,dc=opensource,dc=osu,dc=edu"
       bind_pw: "{{ ldap_host_user_passwd }}"
       state: present
@@ -50,12 +50,12 @@
         - 'top'
         - 'organizationalunit'
       attributes:
-        ou: "{{ ansible_local.osc_facts.app }}"
+        ou: "{{ ansible_local.host_facts.app }}"
 
-  - name: (ldap_host) cn=hosts,ou={{ ansible_local.osc_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu is present and includes {{ ansible_hostname }}
+  - name: (ldap_host) cn=hosts,ou={{ ansible_local.host_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu is present and includes {{ ansible_hostname }}
     ldap_entry:
-      server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
-      dn: "cn=hosts,ou={{ ansible_local.osc_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu"
+      server_uri: "ldap:/{{ ldap_host_provider_fqdn }}"
+      dn: "cn=hosts,ou={{ ansible_local.host_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu"
       bind_dn: "uid={{ ldap_host_user }},ou=people,dc=opensource,dc=osu,dc=edu"
       bind_pw: "{{ ldap_host_user_passwd }}"
       state: present
@@ -66,16 +66,16 @@
         cn: 'hosts'
         member: "cn={{ ansible_hostname }},ou=hosts,dc=opensource,dc=osu,dc=edu"
 
-  - name: (ldap_host) cn=hosts,ou={{ ansible_local.osc_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu includes {{ ansible_hostname }}
+  - name: (ldap_host) cn=hosts,ou={{ ansible_local.host_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu includes {{ ansible_hostname }}
     # We have to have this one, b/c if the cn=hosts already exists, the `member` attribute won't be overwritten or added to the groupofnames
     ldap_attr:
-      server_uri: "ldap://ldapprvin01bato.adm.opensource.osu.edu"
-      dn: "cn=hosts,ou={{ ansible_local.osc_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu"
+      server_uri: "ldap:/{{ ldap_host_provider_fqdn }}"
+      dn: "cn=hosts,ou={{ ansible_local.host_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu"
       bind_dn: "uid={{ ldap_host_user }},ou=people,dc=opensource,dc=osu,dc=edu"
       bind_pw: "{{ ldap_host_user_passwd }}"
       name: member
       values: "cn={{ ansible_hostname }},ou=hosts,dc=opensource,dc=osu,dc=edu"
-      state: present
+      state: "{{ ldap_host_state }}"
 
   delegate_to: localhost
   become: no

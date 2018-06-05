@@ -1,7 +1,7 @@
 # {{ ansible_managed }}
 [sssd]
 config_file_version = 2
-domains = opensource.osu.edu
+domains = {{ global_network_domain }}
 services = nss, pam, sudo
 debug_level=6
 
@@ -14,14 +14,14 @@ debug_level=6
 [sudo]
 debug_level=6
 
-[domain/opensource.osu.edu]
+[domain/{{ global_network_domain }}]
 id_provider = ldap
 auth_provider = ldap
 ldap_schema = rfc2307bis
 ldap_uri = ldap://{{ ldap_host_server }}
-ldap_user_search_base = ou=people,dc=opensource,dc=osu,dc=edu?subtree??ou=svcaccts,dc=opensource,dc=osu,dc=edu?subtree?
-ldap_sudo_search_base = ou=sudoers,dc=opensource,dc=osu,dc=edu
-ldap_group_search_base = ou=groups,dc=opensource,dc=osu,dc=edu?subtree??ou=groups,ou={{ ansible_local.osc_facts.app }},ou=applications,dc=opensource,dc=osu,dc=edu?subtree?
+ldap_user_search_base = ou=people,{{ ldap_host_base_dc }}?subtree??ou=svcaccts,{{ ldap_host_base_dc }}?subtree?
+ldap_sudo_search_base = ou=sudoers,{{ ldap_host_base_dc }}
+ldap_group_search_base = ou=groups,{{ ldap_host_base_dc }}?subtree??ou=groups,ou={{ ansible_local.osc_facts.app }},ou=applications,{{ ldap_host_base_dc }}?subtree?
 access_provider = simple
 {#
 Users can only login if they are a member of the application admin group, network-wide sysadmin group, application
@@ -37,6 +37,6 @@ login to the server, For instance, a jumphost should have users, but not all use
 #}
 simple_allow_users = csecs
 simple_allow_groups = sysadmins, officers, appadmins, appsvcaccts, apphostlogin
-ldap_default_bind_dn = uid=sssdbind,ou=svcaccts,dc=opensource,dc=osu,dc=edu
+ldap_default_bind_dn = uid=sssdbind,ou=svcaccts,{{ ldap_host_base_dc }}
 ldap_default_authtok = {{ ldap_host_sssdbind_authtok }}
 debug_level=6
