@@ -14,7 +14,7 @@
   - name: (dns_manage) Forward lookup file is registered
     stat:
       # Get the environtment that we're in - a.k.a 'adm' for 'dnsmastin01fato.adm.{{ global_network_domain }}'
-      path: "/srv/named/{{ ansible_local.host_facts.env }}.{{ global_network_domain }}.db"
+      path: "/srv/named/{{ global_network_domain }}.db"
     register: dns_manage_forward_lookup_file
     delegate_to: "{{ dns_manage_named_master }}"
 
@@ -33,16 +33,16 @@
     - name: (dns_manage) Forward lookup template is deployed
       template:
         src: 'forward_zone_file.j2'
-        dest: "/srv/named/{{ ansible_local.host_facts.env }}.{{ global_network_domain }}.db"
+        dest: "/srv/named/{{ global_network_domain }}.db"
       delegate_to: "{{ dns_manage_named_master }}"
 
     - name: (dns_manage) Forward lookup zone is specified in '/etc/named.conf'
       blockinfile:
         path: '/etc/named.conf'
         block: |
-          zone "{{ ansible_local.host_facts.env }}.{{ global_network_domain }}" IN {
+          zone "{{ global_network_domain }}" IN {
               type master;
-              file "/srv/named/{{ ansible_local.host_facts.env }}.{{ global_network_domain }}.db";
+              file "/srv/named/{{ global_network_domain }}.db";
           };
       delegate_to: "{{ dns_manage_named_master }}"
 
@@ -71,7 +71,7 @@
   - name: (dns_manage) Forward Lookup Zone entry line is present
     lineinfile:
       # Get the environtment that we're in - a.k.a 'adm' for 'dnsmastin01fato.adm.{{ global_network_domain }}'
-      path: "/srv/named/{{ ansible_local.host_facts.env }}.{{ global_network_domain }}.db"
+      path: "/srv/named/{{ global_network_domain }}.db"
       regexp: "^{{ ansible_hostname }}"
       line: "{{ ansible_hostname }} A {{ ansible_default_ipv4.address }}"
       state: "{{ dns_manage_host_state }}"
@@ -95,7 +95,7 @@
     - name: (dns_manage) Old DNS serial versions are registered
       shell: grep ';Serial' {{ item }} | tr -s ' ' | cut -d ' ' -f 2
       with_items:
-        - "/srv/named/{{ ansible_local.host_facts.env }}.{{ global_network_domain }}.db"
+        - "/srv/named/{{ global_network_domain }}.db"
         - "/srv/named/0.10.db"
       delegate_to: "{{ dns_manage_named_master }}"
       register: dns_manage_serial_numbers

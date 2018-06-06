@@ -1,2 +1,2 @@
 ansible_python_interpreter: '/usr/bin/python3'
-global_network_domain: 'andrewcz.com'
+global_network_domain: 'blu.andrewcz.com'

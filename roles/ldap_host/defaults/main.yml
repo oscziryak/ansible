@@ -3,7 +3,7 @@
 
 ############################################################################################################# CHANGE ME
 
-ldap_host_provider_fqdn: "ldapprvin01bbvh.{{ ansible_local.host_facts.env }}.{{ global_network_domain }}"
+ldap_host_provider_fqdn: "ldapprvin01bbvh.{{ global_network_domain }}"
 ldap_host_state: 'present'
 
 ######################################################################################################### SANE DEFAULTS

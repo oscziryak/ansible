@@ -1,1 +1,1 @@
-ldap_host_server: "ldapprvin01bbvh.{{ ansible_local.host_facts.env }}.{{ global_network_domain }}"
+ldap_host_server: "ldapprvin01bbvh.{{ global_network_domain }}"

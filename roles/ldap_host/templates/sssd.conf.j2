@@ -21,7 +21,7 @@ ldap_schema = rfc2307bis
 ldap_uri = ldap://{{ ldap_host_server }}
 ldap_user_search_base = ou=people,{{ ldap_host_base_dc }}?subtree??ou=svcaccts,{{ ldap_host_base_dc }}?subtree?
 ldap_sudo_search_base = ou=sudoers,{{ ldap_host_base_dc }}
-ldap_group_search_base = ou=groups,{{ ldap_host_base_dc }}?subtree??ou=groups,ou={{ ansible_local.osc_facts.app }},ou=applications,{{ ldap_host_base_dc }}?subtree?
+ldap_group_search_base = ou=groups,{{ ldap_host_base_dc }}?subtree??ou=groups,ou={{ ansible_local.host_facts.app }},ou=applications,{{ ldap_host_base_dc }}?subtree?
 access_provider = simple
 {#
 Users can only login if they are a member of the application admin group, network-wide sysadmin group, application

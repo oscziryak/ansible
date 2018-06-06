@@ -1,4 +1,4 @@
-$ORIGIN {{ ansible_local.host_facts.env }}.{{ global_network_domain }}.
+$ORIGIN {{ global_network_domain }}.
 $TTL 86400
 @   IN  SOA {{ dns_manage_named_master }}. root.{{ ansible_local.host_facts.env }}.{{ global_network_domain }} (
     {{ dns_manage_serial_today }}   ;Serial

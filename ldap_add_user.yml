@@ -4,7 +4,7 @@
 # the LDAP hierarchy. This should not be used as a password-change script. However, this _can_ be used to grant
 # membership into application groups by including an application server in the inventory that is passed.
 #
-#     ansible-playbook -ki inventory_edt_user.inv ldap_user.yml --vault-password-file ~/.vault_pass
+#     ansible-playbook -ki inventory_edt_user.inv ldap_user.yml
 #
 ---
 - hosts: all
@@ -21,7 +21,7 @@
     - name: ldap_user_acct_userPassword2_raw
       prompt: "Please repeat the password"
       private: yes
-  tasks:
+  pre_tasks:
     - set_fact:
         ldap_user_acct_type: "{% if ldap_user_acct_type_selection == '1' %}svcaccts{% elif ldap_user_acct_type_selection == '2' %}people{% endif %}"
 
